@@ -9,6 +9,8 @@ function Dashboard() {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
   const [transacoes, setTransacoes] = useState([]);
+  const [entradas, setEntradas] = useState(0);
+  const [saidas, setSaidas] = useState(0);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -18,6 +20,16 @@ function Dashboard() {
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
           const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
           setTransacoes(lista);
+
+          const totalEntradas = lista
+            .filter((t) => t.tipo === 'entrada')
+            .reduce((acc, t) => acc + t.valor, 0);
+          const totalSaidas = lista
+            .filter((t) => t.tipo === 'saida')
+            .reduce((acc, t) => acc + t.valor, 0);
+
+          setEntradas(totalEntradas);
+          setSaidas(totalSaidas);
         });
         return () => unsubscribeFirestore();
       } else {
@@ -32,6 +44,8 @@ function Dashboard() {
     navigate('/login');
   };
 
+  const saldoAtual = entradas - saidas;
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded p-6">
@@ -41,15 +55,15 @@ function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-blue-100 text-blue-800 p-4 rounded shadow">
             <h2 className="font-semibold">Entradas</h2>
-            <p className="text-xl font-bold">R$ 4.200,00</p>
+            <p className="text-xl font-bold">R$ {entradas.toFixed(2)}</p>
           </div>
           <div className="bg-red-100 text-red-800 p-4 rounded shadow">
             <h2 className="font-semibold">Saídas</h2>
-            <p className="text-xl font-bold">R$ 2.750,00</p>
+            <p className="text-xl font-bold">R$ {saidas.toFixed(2)}</p>
           </div>
           <div className="bg-green-100 text-green-800 p-4 rounded shadow">
             <h2 className="font-semibold">Saldo Atual</h2>
-            <p className="text-xl font-bold">R$ 1.450,00</p>
+            <p className="text-xl font-bold">R$ {saldoAtual.toFixed(2)}</p>
           </div>
         </div>
 
