@@ -3,8 +3,20 @@ import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy
+} from 'firebase/firestore';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -21,22 +33,25 @@ function Dashboard() {
         const q = query(
           collection(db, 'transacoes'),
           where('uid', '==', user.uid),
-          orderBy('data', 'desc') // ordena pela data decrescente
+          orderBy('data', 'desc') // <-- ordenando por data decrescente
         );
 
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
           const lista = snapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data(),
+            ...doc.data()
           }));
+
           setTransacoes(lista);
 
           const totalEntradas = lista
             .filter((t) => t.tipo === 'entrada')
             .reduce((acc, curr) => acc + Number(curr.valor), 0);
+
           const totalSaidas = lista
             .filter((t) => t.tipo === 'saida')
             .reduce((acc, curr) => acc + Number(curr.valor), 0);
+
           setEntradas(totalEntradas);
           setSaidas(totalSaidas);
         });
@@ -56,12 +71,10 @@ function Dashboard() {
   };
 
   const saldo = entradas - saidas;
-
   const dadosGrafico = [
     { name: 'Entradas', value: entradas },
-    { name: 'Saídas', value: saidas },
+    { name: 'Saídas', value: saidas }
   ];
-
   const cores = ['#3B82F6', '#EF4444'];
 
   return (
@@ -131,11 +144,11 @@ function Dashboard() {
             {transacoes.map((transacao) => (
               <li key={transacao.id} className="py-2 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">{transacao.descricao}</p>
+                  <p className="font-medium">{transacao.descricao || 'Sem descrição'}</p>
                   <span className="text-sm text-gray-500">
                     {transacao.data?.seconds
                       ? new Date(transacao.data.seconds * 1000).toLocaleDateString()
-                      : ''}
+                      : 'Sem data'}
                   </span>
                 </div>
                 <span
@@ -145,8 +158,7 @@ function Dashboard() {
                       : 'text-red-600 font-bold'
                   }
                 >
-                  {transacao.tipo === 'entrada' ? '+' : '-'} R${' '}
-                  {Number(transacao.valor).toFixed(2)}
+                  {transacao.tipo === 'entrada' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
                 </span>
               </li>
             ))}
