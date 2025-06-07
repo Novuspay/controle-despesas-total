@@ -1,8 +1,9 @@
 // src/components/NovaTransacao.jsx
 import React, { useEffect, useState } from 'react';
-import { addDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function NovaTransacao() {
   const [tipo, setTipo] = useState('entrada');
@@ -15,19 +16,26 @@ function NovaTransacao() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const carregarCategorias = async () => {
-      const usuario = auth.currentUser;
-      if (!usuario) return;
+    const unsubscribeAuth = onAuthStateChanged(auth, (usuario) => {
+      if (usuario) {
+        const q = query(
+          collection(db, 'categorias'),
+          where('uid', '==', usuario.uid)
+        );
 
-      const snapshot = await getDocs(collection(db, 'categorias'));
-      const lista = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((cat) => cat.uid === usuario.uid);
+        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          const lista = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setCategorias(lista);
+        });
 
-      setCategorias(lista);
-    };
+        return () => unsubscribeSnapshot();
+      }
+    });
 
-    carregarCategorias();
+    return () => unsubscribeAuth();
   }, []);
 
   const handleSalvar = async (e) => {
@@ -103,6 +111,7 @@ function NovaTransacao() {
           value={categoriaSelecionada}
           onChange={(e) => setCategoriaSelecionada(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
+          required
         >
           <option value="">Selecione uma categoria</option>
           {categorias.map((cat) => (
