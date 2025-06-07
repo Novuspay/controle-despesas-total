@@ -1,22 +1,30 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 function Dashboard() {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
+  const [transacoes, setTransacoes] = useState([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUsuario(user);
+        const q = query(collection(db, 'transacoes'), where('usuarioId', '==', user.uid));
+        const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+          const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          setTransacoes(lista);
+        });
+        return () => unsubscribeFirestore();
       } else {
         navigate('/login');
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -45,7 +53,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex justify-between mb-6">
           <Link
             to="/nova"
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
@@ -59,6 +67,29 @@ function Dashboard() {
             Sair
           </button>
         </div>
+
+        <h2 className="text-xl font-semibold mb-2">Transações Recentes</h2>
+        {transacoes.length === 0 ? (
+          <p className="text-gray-500">Nenhuma transação cadastrada.</p>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {transacoes.map((transacao) => (
+              <li key={transacao.id} className="py-2 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{transacao.descricao}</p>
+                  <span className="text-sm text-gray-500">{new Date(transacao.data?.seconds * 1000).toLocaleDateString()}</span>
+                </div>
+                <span className={
+                  transacao.tipo === 'entrada'
+                    ? 'text-green-600 font-bold'
+                    : 'text-red-600 font-bold'
+                }>
+                  {transacao.tipo === 'entrada' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
