@@ -15,6 +15,8 @@ function NovaTransacao() {
     setErro('');
 
     const usuario = auth.currentUser;
+console.log("Usuário atual:", usuario);
+
     const valorNumerico = parseFloat(valor);
 
     if (!usuario) {
