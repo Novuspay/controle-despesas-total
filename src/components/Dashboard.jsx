@@ -32,7 +32,7 @@ function Dashboard() {
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
           const lista = snapshot.docs
             .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .sort((a, b) => b.data?.seconds - a.data?.seconds); // ordem decrescente
+            .sort((a, b) => b.data?.seconds - a.data?.seconds);
 
           setTransacoes(lista);
 
@@ -123,12 +123,18 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex justify-between mb-6">
+        <div className="flex flex-wrap gap-2 justify-between mb-6">
           <Link
             to="/nova"
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
             Nova Transação
+          </Link>
+          <Link
+            to="/categoria"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Nova Categoria
           </Link>
           <button
             onClick={handleLogout}
