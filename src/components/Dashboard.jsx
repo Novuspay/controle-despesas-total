@@ -3,13 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  orderBy
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import {
   PieChart,
   Pie,
@@ -32,8 +26,7 @@ function Dashboard() {
 
         const q = query(
           collection(db, 'transacoes'),
-          where('uid', '==', user.uid),
-          orderBy('data', 'desc') // <-- ordenando por data decrescente
+          where('uid', '==', user.uid)
         );
 
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
