@@ -1,42 +1,34 @@
 // src/components/Categorias.jsx
-import React, { useState, useEffect } from 'react';
-import { addDoc, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import React, { useEffect, useState } from 'react';
+import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 function Categorias() {
-  const [nome, setNome] = useState('');
-  const [categorias, setCategorias] = useState([]);
+  const [categorias, setCategorias] = useState({ entrada: [], saida: [] });
   const [erro, setErro] = useState('');
 
   const carregarCategorias = async () => {
-    const snapshot = await getDocs(collection(db, 'categorias'));
-    const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setCategorias(lista);
-  };
-
-  useEffect(() => {
-    carregarCategorias();
-  }, []);
-
-  const handleAdicionar = async (e) => {
-    e.preventDefault();
     setErro('');
-
-    if (!nome.trim()) {
-      setErro('Digite um nome válido.');
-      return;
-    }
+    const usuario = auth.currentUser;
+    if (!usuario) return;
 
     try {
-      await addDoc(collection(db, 'categorias'), { nome: nome.trim() });
-      setNome('');
-      carregarCategorias();
+      const snapshot = await getDocs(collection(db, 'categorias'));
+      const todas = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((cat) => cat.uid === usuario.uid);
+
+      const entrada = todas.filter((cat) => cat.tipo === 'entrada');
+      const saida = todas.filter((cat) => cat.tipo === 'saida');
+
+      setCategorias({ entrada, saida });
     } catch (err) {
-      setErro('Erro ao adicionar: ' + err.message);
+      setErro('Erro ao carregar categorias: ' + err.message);
     }
   };
 
-  const handleExcluir = async (id) => {
+  const excluirCategoria = async (id) => {
+    if (!window.confirm('Deseja excluir esta categoria?')) return;
     try {
       await deleteDoc(doc(db, 'categorias', id));
       carregarCategorias();
@@ -45,36 +37,42 @@ function Categorias() {
     }
   };
 
+  useEffect(() => {
+    carregarCategorias();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <div className="bg-white shadow-md rounded p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Gerenciar Categorias</h2>
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Minhas Categorias</h1>
 
-        <form onSubmit={handleAdicionar} className="mb-4">
-          <input
-            type="text"
-            placeholder="Nova categoria"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded mb-2"
-          />
-          {erro && <p className="text-red-500 mb-2">{erro}</p>}
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full"
-          >
-            Adicionar
-          </button>
-        </form>
+      {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
-        <h3 className="text-lg font-semibold mb-2">Categorias Existentes</h3>
-        <ul className="divide-y divide-gray-200">
-          {categorias.map((cat) => (
-            <li key={cat.id} className="flex justify-between items-center py-2">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2 text-green-700">Entradas</h2>
+        <ul className="space-y-2">
+          {categorias.entrada.map((cat) => (
+            <li key={cat.id} className="flex justify-between items-center bg-green-50 p-2 rounded">
               <span>{cat.nome}</span>
               <button
-                onClick={() => handleExcluir(cat.id)}
-                className="text-red-600 hover:text-red-800 text-sm"
+                onClick={() => excluirCategoria(cat.id)}
+                className="bg-red-200 text-red-700 px-2 py-1 rounded hover:bg-red-300"
+              >
+                Excluir
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-2 text-red-700">Saídas</h2>
+        <ul className="space-y-2">
+          {categorias.saida.map((cat) => (
+            <li key={cat.id} className="flex justify-between items-center bg-red-50 p-2 rounded">
+              <span>{cat.nome}</span>
+              <button
+                onClick={() => excluirCategoria(cat.id)}
+                className="bg-red-200 text-red-700 px-2 py-1 rounded hover:bg-red-300"
               >
                 Excluir
               </button>
