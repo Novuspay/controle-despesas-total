@@ -123,23 +123,17 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-between mb-6">
-          <Link
-            to="/nova"
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
+        <div className="flex justify-between flex-wrap gap-2 mb-6">
+          <Link to="/nova" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
             Nova Transação
           </Link>
-          <Link
-            to="/categoria"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
+          <Link to="/categoria" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
             Nova Categoria
           </Link>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
+          <Link to="/categorias" className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+            Ver Categorias
+          </Link>
+          <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
             Sair
           </button>
         </div>
