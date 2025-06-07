@@ -1,3 +1,4 @@
+// src/components/NovaTransacao.jsx
 import React, { useState } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -14,12 +15,13 @@ function NovaTransacao() {
     setErro('');
 
     const usuario = auth.currentUser;
+    const valorNumerico = parseFloat(valor);
+
     if (!usuario) {
       setErro('Usuário não autenticado.');
       return;
     }
 
-    const valorNumerico = parseFloat(valor);
     if (isNaN(valorNumerico) || valorNumerico <= 0) {
       setErro('Informe um valor válido maior que zero.');
       return;
@@ -32,11 +34,7 @@ function NovaTransacao() {
         data: serverTimestamp(),
         uid: usuario.uid,
       });
-
-      // Pequena espera para garantir gravação no Firestore antes de redirecionar
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 500);
+      navigate('/dashboard');
     } catch (err) {
       setErro('Erro ao salvar transação: ' + err.message);
     }
@@ -62,6 +60,7 @@ function NovaTransacao() {
           value={valor}
           onChange={(e) => setValor(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
+          step="0.01"
           required
         />
 
