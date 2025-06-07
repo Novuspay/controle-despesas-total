@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import NovaTransacao from './components/NovaTransacao';
 import NovaCategoria from './components/NovaCategoria'; // ✅ nova importação
 import Categorias from './components/Categorias';
+import CategoriasListagem from './components/CategoriasListagem'; // ✅ novo componente
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/nova" element={<NovaTransacao />} />
         <Route path="/categoria" element={<NovaCategoria />} /> {/* ✅ nova rota */}
         <Route path="/categorias" element={<Categorias />} />
+        <Route path="/categorias" element={<CategoriasListagem />} />
       </Routes>
     </BrowserRouter>
   );
