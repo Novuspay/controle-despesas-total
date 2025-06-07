@@ -17,7 +17,7 @@ function Dashboard() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUsuario(user);
-        const q = query(collection(db, 'transacoes'), where('usuarioId', '==', user.uid));
+        const q = query(collection(db, 'transacoes'), where('uid', '==', user.uid));
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
           const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
           setTransacoes(lista);
