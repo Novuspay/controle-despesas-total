@@ -1,4 +1,3 @@
-// src/components/NovaTransacao.jsx
 import React, { useState } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -20,14 +19,24 @@ function NovaTransacao() {
       return;
     }
 
+    const valorNumerico = parseFloat(valor);
+    if (isNaN(valorNumerico) || valorNumerico <= 0) {
+      setErro('Informe um valor válido maior que zero.');
+      return;
+    }
+
     try {
       await addDoc(collection(db, 'transacoes'), {
         tipo,
-        valor: parseFloat(valor),
+        valor: valorNumerico,
         data: serverTimestamp(),
         uid: usuario.uid,
       });
-      navigate('/dashboard');
+
+      // Pequena espera para garantir gravação no Firestore antes de redirecionar
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (err) {
       setErro('Erro ao salvar transação: ' + err.message);
     }
