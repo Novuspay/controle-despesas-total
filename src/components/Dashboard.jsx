@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import {
   PieChart,
   Pie,
@@ -61,6 +61,16 @@ function Dashboard() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate('/login');
+  };
+
+  const handleExcluir = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await deleteDoc(doc(db, 'transacoes', id));
+      } catch (err) {
+        console.error('Erro ao excluir:', err);
+      }
+    }
   };
 
   const saldo = entradas - saidas;
@@ -144,15 +154,23 @@ function Dashboard() {
                       : 'Sem data'}
                   </span>
                 </div>
-                <span
-                  className={
-                    transacao.tipo === 'entrada'
-                      ? 'text-green-600 font-bold'
-                      : 'text-red-600 font-bold'
-                  }
-                >
-                  {transacao.tipo === 'entrada' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
-                </span>
+                <div className="flex items-center gap-4">
+                  <span
+                    className={
+                      transacao.tipo === 'entrada'
+                        ? 'text-green-600 font-bold'
+                        : 'text-red-600 font-bold'
+                    }
+                  >
+                    {transacao.tipo === 'entrada' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
+                  </span>
+                  <button
+                    onClick={() => handleExcluir(transacao.id)}
+                    className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
