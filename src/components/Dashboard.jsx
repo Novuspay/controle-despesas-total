@@ -26,7 +26,9 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded p-6">
-        <h1 className="text-3xl font-bold mb-2">Olá, {usuario?.email || 'Usuário'} 👋</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋
+        </h1>
         <p className="text-gray-600 mb-6">Bem-vindo ao seu painel de controle</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
