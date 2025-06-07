@@ -123,13 +123,19 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex justify-between flex-wrap gap-2 mb-6">
-          <div className="flex gap-2">
+        <div className="flex flex-wrap gap-4 justify-between mb-6">
+          <div className="flex gap-4">
             <Link
               to="/nova"
               className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
             >
               Nova Transação
+            </Link>
+            <Link
+              to="/categoria"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Nova Categoria
             </Link>
             <Link
               to="/categorias"
@@ -160,7 +166,9 @@ function Dashboard() {
                       ? new Date(transacao.data.seconds * 1000).toLocaleDateString()
                       : 'Sem data'}
                   </span>
-                  <p className="text-xs text-gray-400 italic">{transacao.categoria || ''}</p>
+                  <p className="text-xs text-gray-400 italic">
+                    {transacao.categoria || ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span
