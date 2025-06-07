@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, where, onSnapshot, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
@@ -46,14 +46,6 @@ function Dashboard() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate('/login');
-  };
-
-  const handleExcluir = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'transacoes', id));
-    } catch (error) {
-      console.error('Erro ao excluir transação:', error);
-    }
   };
 
   const saldo = entradas - saidas;
@@ -130,26 +122,18 @@ function Dashboard() {
             {transacoes.map((transacao) => (
               <li key={transacao.id} className="py-2 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">{transacao.descricao}</p>
+                  <p className="font-medium">{transacao.descricao || '(Sem descrição)'}</p>
                   <span className="text-sm text-gray-500">{new Date(transacao.data?.seconds * 1000).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span
-                    className={
-                      transacao.tipo === 'entrada'
-                        ? 'text-green-600 font-bold'
-                        : 'text-red-600 font-bold'
-                    }
-                  >
-                    {transacao.tipo === 'entrada' ? '+' : '-'} R$ {Number(transacao.valor).toFixed(2)}
-                  </span>
-                  <button
-                    onClick={() => handleExcluir(transacao.id)}
-                    className="text-sm text-white bg-red-500 px-2 py-1 rounded hover:bg-red-600"
-                  >
-                    Excluir
-                  </button>
-                </div>
+                <span
+                  className={
+                    transacao.tipo === 'entrada'
+                      ? 'text-green-600 font-bold'
+                      : 'text-red-600 font-bold'
+                  }
+                >
+                  {transacao.tipo === 'entrada' ? '+' : '-'} R$ {Number(transacao.valor).toFixed(2)}
+                </span>
               </li>
             ))}
           </ul>
