@@ -1,5 +1,5 @@
 // src/components/NovaTransacao.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
@@ -9,19 +9,25 @@ function NovaTransacao() {
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState('');
-  const [categoria, setCategoria] = useState('');
   const [categorias, setCategorias] = useState([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCategorias = async () => {
-      const querySnapshot = await getDocs(collection(db, 'categorias'));
-      const lista = querySnapshot.docs.map((doc) => doc.data().nome);
+    const carregarCategorias = async () => {
+      const usuario = auth.currentUser;
+      if (!usuario) return;
+
+      const snapshot = await getDocs(collection(db, 'categorias'));
+      const lista = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((cat) => cat.uid === usuario.uid);
+
       setCategorias(lista);
     };
 
-    fetchCategorias();
+    carregarCategorias();
   }, []);
 
   const handleSalvar = async (e) => {
@@ -34,13 +40,19 @@ function NovaTransacao() {
       return;
     }
 
+    const valorNumero = parseFloat(valor);
+    if (isNaN(valorNumero) || valorNumero <= 0) {
+      setErro('Informe um valor válido maior que zero.');
+      return;
+    }
+
     try {
       await addDoc(collection(db, 'transacoes'), {
         tipo,
-        valor: parseFloat(valor),
+        valor: valorNumero,
         descricao,
         data: data ? new Date(data) : serverTimestamp(),
-        categoria,
+        categoria: categoriaSelecionada,
         uid: usuario.uid,
       });
       navigate('/dashboard');
@@ -88,13 +100,13 @@ function NovaTransacao() {
         />
 
         <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
+          value={categoriaSelecionada}
+          onChange={(e) => setCategoriaSelecionada(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
         >
           <option value="">Selecione uma categoria</option>
-          {categorias.map((cat, idx) => (
-            <option key={idx} value={cat}>{cat}</option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.nome}>{cat.nome}</option>
           ))}
         </select>
 
