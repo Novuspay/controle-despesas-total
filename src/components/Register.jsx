@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile
+} from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
 function Register() {
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -14,9 +19,10 @@ function Register() {
     setErro('');
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(userCredential.user, { displayName: nome });
       await sendEmailVerification(userCredential.user);
       alert("Conta criada com sucesso! Verifique seu email antes de fazer login.");
-      navigate('/'); // Redireciona para o dashboard
+      navigate('/');
     } catch (error) {
       setErro('Erro ao cadastrar: ' + error.message);
     }
@@ -29,6 +35,14 @@ function Register() {
         className="bg-white p-8 rounded shadow-md w-96"
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Criar Conta</h2>
+        <input
+          type="text"
+          placeholder="Seu nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded mb-4"
+          required
+        />
         <input
           type="email"
           placeholder="Seu email"
