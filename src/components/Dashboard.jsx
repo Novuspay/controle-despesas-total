@@ -17,13 +17,18 @@ function Dashboard() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUsuario(user);
+
         const q = query(
           collection(db, 'transacoes'),
           where('uid', '==', user.uid),
-          orderBy('data', 'desc')
+          orderBy('data', 'desc') // ordena pela data decrescente
         );
+
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
-          const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const lista = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
           setTransacoes(lista);
 
           const totalEntradas = lista
@@ -35,11 +40,13 @@ function Dashboard() {
           setEntradas(totalEntradas);
           setSaidas(totalSaidas);
         });
+
         return () => unsubscribeFirestore();
       } else {
         navigate('/login');
       }
     });
+
     return () => unsubscribeAuth();
   }, [navigate]);
 
@@ -60,7 +67,9 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded p-6">
-        <h1 className="text-3xl font-bold mb-2">Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋
+        </h1>
         <p className="text-gray-600 mb-6">Bem-vindo ao seu painel de controle</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -122,8 +131,12 @@ function Dashboard() {
             {transacoes.map((transacao) => (
               <li key={transacao.id} className="py-2 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">{transacao.descricao || '(Sem descrição)'}</p>
-                  <span className="text-sm text-gray-500">{new Date(transacao.data?.seconds * 1000).toLocaleDateString()}</span>
+                  <p className="font-medium">{transacao.descricao}</p>
+                  <span className="text-sm text-gray-500">
+                    {transacao.data?.seconds
+                      ? new Date(transacao.data.seconds * 1000).toLocaleDateString()
+                      : ''}
+                  </span>
                 </div>
                 <span
                   className={
@@ -132,7 +145,8 @@ function Dashboard() {
                       : 'text-red-600 font-bold'
                   }
                 >
-                  {transacao.tipo === 'entrada' ? '+' : '-'} R$ {Number(transacao.valor).toFixed(2)}
+                  {transacao.tipo === 'entrada' ? '+' : '-'} R${' '}
+                  {Number(transacao.valor).toFixed(2)}
                 </span>
               </li>
             ))}
