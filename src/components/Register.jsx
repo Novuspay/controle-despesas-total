@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +13,9 @@ function Register() {
     e.preventDefault();
     setErro('');
     try {
-      await createUserWithEmailAndPassword(auth, email, senha);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      await sendEmailVerification(userCredential.user);
+      alert("Conta criada com sucesso! Verifique seu email antes de fazer login.");
       navigate('/'); // Redireciona para o dashboard
     } catch (error) {
       setErro('Erro ao cadastrar: ' + error.message);
