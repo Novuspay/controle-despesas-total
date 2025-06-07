@@ -4,6 +4,7 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -23,11 +24,10 @@ function Dashboard() {
 
           const totalEntradas = lista
             .filter((t) => t.tipo === 'entrada')
-            .reduce((acc, t) => acc + t.valor, 0);
+            .reduce((acc, curr) => acc + Number(curr.valor), 0);
           const totalSaidas = lista
             .filter((t) => t.tipo === 'saida')
-            .reduce((acc, t) => acc + t.valor, 0);
-
+            .reduce((acc, curr) => acc + Number(curr.valor), 0);
           setEntradas(totalEntradas);
           setSaidas(totalSaidas);
         });
@@ -44,7 +44,14 @@ function Dashboard() {
     navigate('/login');
   };
 
-  const saldoAtual = entradas - saidas;
+  const saldo = entradas - saidas;
+
+  const dadosGrafico = [
+    { name: 'Entradas', value: entradas },
+    { name: 'Saídas', value: saidas },
+  ];
+
+  const cores = ['#3B82F6', '#EF4444'];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -63,8 +70,29 @@ function Dashboard() {
           </div>
           <div className="bg-green-100 text-green-800 p-4 rounded shadow">
             <h2 className="font-semibold">Saldo Atual</h2>
-            <p className="text-xl font-bold">R$ {saldoAtual.toFixed(2)}</p>
+            <p className="text-xl font-bold">R$ {saldo.toFixed(2)}</p>
           </div>
+        </div>
+
+        <div className="w-full h-64 mb-6">
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={dadosGrafico}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label
+              >
+                {dadosGrafico.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={cores[index % cores.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
         <div className="flex justify-between mb-6">
