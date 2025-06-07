@@ -1,77 +1,87 @@
 // src/components/Categorias.jsx
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { addDoc, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function Categorias() {
-  const [novaCategoria, setNovaCategoria] = useState('');
+  const [nome, setNome] = useState('');
   const [categorias, setCategorias] = useState([]);
+  const [erro, setErro] = useState('');
+
+  const carregarCategorias = async () => {
+    const snapshot = await getDocs(collection(db, 'categorias'));
+    const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setCategorias(lista);
+  };
 
   useEffect(() => {
-    const usuario = auth.currentUser;
-    if (!usuario) return;
-
-    const unsub = onSnapshot(
-      collection(db, 'categorias'),
-      (snapshot) => {
-        const lista = snapshot.docs
-          .filter((doc) => doc.data().uid === usuario.uid)
-          .map((doc) => ({ id: doc.id, ...doc.data() }));
-        setCategorias(lista);
-      }
-    );
-
-    return () => unsub();
+    carregarCategorias();
   }, []);
 
-  const handleAdicionar = async () => {
-    const usuario = auth.currentUser;
-    if (!novaCategoria.trim() || !usuario) return;
+  const handleAdicionar = async (e) => {
+    e.preventDefault();
+    setErro('');
 
-    await addDoc(collection(db, 'categorias'), {
-      nome: novaCategoria.trim(),
-      uid: usuario.uid
-    });
-    setNovaCategoria('');
+    if (!nome.trim()) {
+      setErro('Digite um nome válido.');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'categorias'), { nome: nome.trim() });
+      setNome('');
+      carregarCategorias();
+    } catch (err) {
+      setErro('Erro ao adicionar: ' + err.message);
+    }
   };
 
   const handleExcluir = async (id) => {
-    if (window.confirm('Deseja excluir esta categoria?')) {
+    try {
       await deleteDoc(doc(db, 'categorias', id));
+      carregarCategorias();
+    } catch (err) {
+      setErro('Erro ao excluir: ' + err.message);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-6 p-4 bg-white shadow rounded">
-      <h2 className="text-xl font-bold mb-4">Gerenciar Categorias</h2>
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          value={novaCategoria}
-          onChange={(e) => setNovaCategoria(e.target.value)}
-          placeholder="Nome da categoria"
-          className="flex-grow border border-gray-300 rounded p-2"
-        />
-        <button
-          onClick={handleAdicionar}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Adicionar
-        </button>
+    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
+      <div className="bg-white shadow-md rounded p-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4">Gerenciar Categorias</h2>
+
+        <form onSubmit={handleAdicionar} className="mb-4">
+          <input
+            type="text"
+            placeholder="Nova categoria"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-2"
+          />
+          {erro && <p className="text-red-500 mb-2">{erro}</p>}
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full"
+          >
+            Adicionar
+          </button>
+        </form>
+
+        <h3 className="text-lg font-semibold mb-2">Categorias Existentes</h3>
+        <ul className="divide-y divide-gray-200">
+          {categorias.map((cat) => (
+            <li key={cat.id} className="flex justify-between items-center py-2">
+              <span>{cat.nome}</span>
+              <button
+                onClick={() => handleExcluir(cat.id)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                Excluir
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="divide-y">
-        {categorias.map((cat) => (
-          <li key={cat.id} className="flex justify-between py-2">
-            <span>{cat.nome}</span>
-            <button
-              onClick={() => handleExcluir(cat.id)}
-              className="text-sm text-red-600 hover:underline"
-            >
-              Excluir
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
