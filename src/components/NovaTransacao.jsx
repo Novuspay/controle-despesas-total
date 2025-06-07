@@ -1,6 +1,6 @@
 // src/components/NovaTransacao.jsx
-import React, { useState } from 'react';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { addDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,8 +9,20 @@ function NovaTransacao() {
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [categorias, setCategorias] = useState([]);
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      const querySnapshot = await getDocs(collection(db, 'categorias'));
+      const lista = querySnapshot.docs.map((doc) => doc.data().nome);
+      setCategorias(lista);
+    };
+
+    fetchCategorias();
+  }, []);
 
   const handleSalvar = async (e) => {
     e.preventDefault();
@@ -22,28 +34,13 @@ function NovaTransacao() {
       return;
     }
 
-    const valorNumero = parseFloat(valor);
-    if (isNaN(valorNumero) || valorNumero <= 0) {
-      setErro('Informe um valor válido.');
-      return;
-    }
-
-    let dataTimestamp;
-    try {
-      const [ano, mes, dia] = data.split('-');
-      const dateObj = new Date(ano, mes - 1, dia);
-      dataTimestamp = Timestamp.fromDate(dateObj);
-    } catch {
-      setErro('Data inválida.');
-      return;
-    }
-
     try {
       await addDoc(collection(db, 'transacoes'), {
         tipo,
-        valor: valorNumero,
-        descricao: descricao || 'Sem descrição',
-        data: dataTimestamp,
+        valor: parseFloat(valor),
+        descricao,
+        data: data ? new Date(data) : serverTimestamp(),
+        categoria,
         uid: usuario.uid,
       });
       navigate('/dashboard');
@@ -88,8 +85,18 @@ function NovaTransacao() {
           value={data}
           onChange={(e) => setData(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
-          required
         />
+
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded mb-4"
+        >
+          <option value="">Selecione uma categoria</option>
+          {categorias.map((cat, idx) => (
+            <option key={idx} value={cat}>{cat}</option>
+          ))}
+        </select>
 
         {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
