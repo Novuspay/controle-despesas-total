@@ -1,55 +1,64 @@
 // src/components/CategoriasListagem.jsx
 import React, { useEffect, useState } from 'react';
-import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { useNavigate } from 'react-router-dom';
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { useNavigate, Link } from 'react-router-dom';
 
 function CategoriasListagem() {
-  const [categorias, setCategorias] = useState([]);
+  const [categoriasEntrada, setCategoriasEntrada] = useState([]);
+  const [categoriasSaida, setCategoriasSaida] = useState([]);
   const navigate = useNavigate();
 
-  const carregarCategorias = async () => {
+  useEffect(() => {
     const usuario = auth.currentUser;
-    if (!usuario) {
-      navigate('/login');
-      return;
-    }
+    if (!usuario) return;
 
-    const snapshot = await getDocs(collection(db, 'categorias'));
-    const lista = snapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((cat) => cat.uid === usuario.uid);
+    const q = query(collection(db, 'categorias'), where('uid', '==', usuario.uid));
 
-    setCategorias(lista);
-  };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setCategoriasEntrada(lista.filter(cat => cat.tipo === 'entrada'));
+      setCategoriasSaida(lista.filter(cat => cat.tipo === 'saida'));
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleExcluir = async (id) => {
     if (window.confirm('Deseja realmente excluir esta categoria?')) {
-      await deleteDoc(doc(db, 'categorias', id));
-      carregarCategorias();
+      try {
+        await deleteDoc(doc(db, 'categorias', id));
+      } catch (err) {
+        console.error('Erro ao excluir categoria:', err);
+      }
     }
   };
-
-  useEffect(() => {
-    carregarCategorias();
-  }, []);
-
-  const categoriasEntrada = categorias.filter((cat) => cat.tipo === 'entrada');
-  const categoriasSaida = categorias.filter((cat) => cat.tipo === 'saida');
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-2xl mx-auto bg-white shadow-md rounded p-6">
-        <h1 className="text-2xl font-bold mb-6">Minhas Categorias</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Minhas Categorias</h2>
+          <Link
+            to="/categoria"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Nova Categoria
+          </Link>
+        </div>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Categorias de Entrada</h2>
+          <h3 className="text-lg font-semibold text-blue-700 mb-2">Categorias de Entrada</h3>
           {categoriasEntrada.length === 0 ? (
-            <p className="text-gray-500">Nenhuma categoria cadastrada.</p>
+            <p className="text-gray-500">Nenhuma categoria de entrada cadastrada.</p>
           ) : (
             <ul className="divide-y divide-gray-200">
               {categoriasEntrada.map((cat) => (
-                <li key={cat.id} className="py-2 flex justify-between items-center">
+                <li key={cat.id} className="flex justify-between items-center py-2">
                   <span>{cat.nome}</span>
                   <button
                     onClick={() => handleExcluir(cat.id)}
@@ -64,13 +73,13 @@ function CategoriasListagem() {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-2">Categorias de Saída</h2>
+          <h3 className="text-lg font-semibold text-red-700 mb-2">Categorias de Saída</h3>
           {categoriasSaida.length === 0 ? (
-            <p className="text-gray-500">Nenhuma categoria cadastrada.</p>
+            <p className="text-gray-500">Nenhuma categoria de saída cadastrada.</p>
           ) : (
             <ul className="divide-y divide-gray-200">
               {categoriasSaida.map((cat) => (
-                <li key={cat.id} className="py-2 flex justify-between items-center">
+                <li key={cat.id} className="flex justify-between items-center py-2">
                   <span>{cat.nome}</span>
                   <button
                     onClick={() => handleExcluir(cat.id)}
