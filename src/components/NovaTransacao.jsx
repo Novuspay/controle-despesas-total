@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 function NovaTransacao() {
   const [tipo, setTipo] = useState('entrada');
   const [valor, setValor] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
@@ -15,8 +16,6 @@ function NovaTransacao() {
     setErro('');
 
     const usuario = auth.currentUser;
-console.log("Usuário atual:", usuario);
-
     const valorNumerico = parseFloat(valor);
 
     if (!usuario) {
@@ -33,6 +32,7 @@ console.log("Usuário atual:", usuario);
       await addDoc(collection(db, 'transacoes'), {
         tipo,
         valor: valorNumerico,
+        descricao: descricao || 'Sem descrição',
         data: serverTimestamp(),
         uid: usuario.uid,
       });
@@ -57,12 +57,19 @@ console.log("Usuário atual:", usuario);
         </select>
 
         <input
+          type="text"
+          placeholder="Descrição"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded mb-4"
+        />
+
+        <input
           type="number"
           placeholder="Valor"
           value={valor}
           onChange={(e) => setValor(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
-          step="0.01"
           required
         />
 
