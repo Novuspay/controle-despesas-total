@@ -1,6 +1,6 @@
 // src/components/NovaTransacao.jsx
 import React, { useState } from 'react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ function NovaTransacao() {
   const [tipo, setTipo] = useState('entrada');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [data, setData] = useState('');
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
@@ -16,13 +17,12 @@ function NovaTransacao() {
     setErro('');
 
     const usuario = auth.currentUser;
-    const valorNumerico = parseFloat(valor);
-
     if (!usuario) {
       setErro('Usuário não autenticado.');
       return;
     }
 
+    const valorNumerico = parseFloat(valor);
     if (isNaN(valorNumerico) || valorNumerico <= 0) {
       setErro('Informe um valor válido maior que zero.');
       return;
@@ -32,8 +32,8 @@ function NovaTransacao() {
       await addDoc(collection(db, 'transacoes'), {
         tipo,
         valor: valorNumerico,
-        descricao: descricao || 'Sem descrição',
-        data: serverTimestamp(),
+        descricao,
+        data: data ? Timestamp.fromDate(new Date(data)) : serverTimestamp(),
         uid: usuario.uid,
       });
       navigate('/dashboard');
@@ -57,6 +57,15 @@ function NovaTransacao() {
         </select>
 
         <input
+          type="number"
+          placeholder="Valor"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded mb-4"
+          required
+        />
+
+        <input
           type="text"
           placeholder="Descrição"
           value={descricao}
@@ -65,12 +74,10 @@ function NovaTransacao() {
         />
 
         <input
-          type="number"
-          placeholder="Valor"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
+          type="date"
+          value={data}
+          onChange={(e) => setData(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
-          required
         />
 
         {erro && <p className="text-red-500 mb-4">{erro}</p>}
