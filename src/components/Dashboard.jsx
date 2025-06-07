@@ -1,7 +1,8 @@
+// src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -26,9 +27,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded p-6">
-        <h1 className="text-3xl font-bold mb-2">
-          Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋
-        </h1>
+        <h1 className="text-3xl font-bold mb-2">Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋</h1>
         <p className="text-gray-600 mb-6">Bem-vindo ao seu painel de controle</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -46,12 +45,20 @@ function Dashboard() {
           </div>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Sair
-        </button>
+        <div className="flex justify-between">
+          <Link
+            to="/nova"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Nova Transação
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Sair
+          </button>
+        </div>
       </div>
     </div>
   );
