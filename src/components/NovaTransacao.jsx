@@ -1,6 +1,6 @@
 // src/components/NovaTransacao.jsx
 import React, { useState } from 'react';
-import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,18 +22,28 @@ function NovaTransacao() {
       return;
     }
 
-    const valorNumerico = parseFloat(valor);
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      setErro('Informe um valor válido maior que zero.');
+    const valorNumero = parseFloat(valor);
+    if (isNaN(valorNumero) || valorNumero <= 0) {
+      setErro('Informe um valor válido.');
+      return;
+    }
+
+    let dataTimestamp;
+    try {
+      const [ano, mes, dia] = data.split('-');
+      const dateObj = new Date(ano, mes - 1, dia);
+      dataTimestamp = Timestamp.fromDate(dateObj);
+    } catch {
+      setErro('Data inválida.');
       return;
     }
 
     try {
       await addDoc(collection(db, 'transacoes'), {
         tipo,
-        valor: valorNumerico,
-        descricao,
-        data: data ? Timestamp.fromDate(new Date(data)) : serverTimestamp(),
+        valor: valorNumero,
+        descricao: descricao || 'Sem descrição',
+        data: dataTimestamp,
         uid: usuario.uid,
       });
       navigate('/dashboard');
@@ -78,6 +88,7 @@ function NovaTransacao() {
           value={data}
           onChange={(e) => setData(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
+          required
         />
 
         {erro && <p className="text-red-500 mb-4">{erro}</p>}
