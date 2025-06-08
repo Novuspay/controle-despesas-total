@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react'; // ícone moderno
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -35,9 +36,14 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100">
-        <h2 className="text-3xl font-extrabold text-center text-emerald-600 mb-6">Acessar Conta</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100 animate-fade-in">
+        <div className="flex justify-center mb-4">
+          <ShieldCheck className="w-12 h-12 text-emerald-600" />
+        </div>
+
+        <h2 className="text-3xl font-extrabold text-center text-emerald-600 mb-2">Acessar Conta</h2>
+        <p className="text-sm text-gray-500 text-center mb-6">Gerencie suas finanças com controle e segurança</p>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
@@ -45,7 +51,7 @@ function Login() {
             <input
               type="email"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              placeholder="Seu email"
+              placeholder="exemplo@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -57,7 +63,7 @@ function Login() {
             <input
               type="password"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              placeholder="Sua senha"
+              placeholder="Digite sua senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
@@ -76,7 +82,7 @@ function Login() {
           <button
             type="button"
             onClick={handlePasswordReset}
-            className="block w-full text-center text-sm text-emerald-600 hover:underline mt-2"
+            className="block w-full text-center text-sm text-emerald-600 hover:underline mt-1"
           >
             Esqueceu a senha?
           </button>
