@@ -1,9 +1,10 @@
 // src/components/NovaTransacao.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import categoriasFixas from '../categoriasFixas';
+import Layout from './Layout';
 
 function NovaTransacao() {
   const [tipo, setTipo] = useState('entrada');
@@ -48,65 +49,67 @@ function NovaTransacao() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleSalvar} className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">Nova Transação</h2>
+    <Layout>
+      <div className="flex justify-center items-center min-h-[85vh] bg-gray-100">
+        <form onSubmit={handleSalvar} className="bg-white p-8 rounded shadow-md w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-6 text-center">Nova Transação</h2>
 
-        <select
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-        >
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-4"
+          >
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
 
-        <input
-          type="number"
-          placeholder="Valor"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-          required
-        />
+          <input
+            type="number"
+            placeholder="Valor"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-4"
+            required
+          />
 
-        <input
-          type="text"
-          placeholder="Descrição"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-        />
+          <input
+            type="text"
+            placeholder="Descrição"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-4"
+          />
 
-        <input
-          type="date"
-          value={data}
-          onChange={(e) => setData(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-        />
+          <input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-4"
+          />
 
-        <select
-          value={categoriaSelecionada}
-          onChange={(e) => setCategoriaSelecionada(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-          required
-        >
-          <option value="">Selecione uma categoria</option>
-          {categoriasFiltradas.map((cat, idx) => (
-            <option key={idx} value={cat.nome}>{cat.nome}</option>
-          ))}
-        </select>
+          <select
+            value={categoriaSelecionada}
+            onChange={(e) => setCategoriaSelecionada(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded mb-4"
+            required
+          >
+            <option value="">Selecione uma categoria</option>
+            {categoriasFiltradas.map((cat, idx) => (
+              <option key={idx} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
 
-        {erro && <p className="text-red-500 mb-4">{erro}</p>}
+          {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
-        <button
-          type="submit"
-          className="bg-green-500 text-white w-full p-2 rounded hover:bg-green-600"
-        >
-          Salvar
-        </button>
-      </form>
-    </div>
+          <button
+            type="submit"
+            className="bg-green-500 text-white w-full p-2 rounded hover:bg-green-600"
+          >
+            Salvar
+          </button>
+        </form>
+      </div>
+    </Layout>
   );
 }
 
