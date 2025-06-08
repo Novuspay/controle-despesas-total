@@ -35,7 +35,7 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 via-white to-green-200">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md border border-gray-200">
         <h2 className="text-3xl font-bold text-center text-green-600 mb-6">Acessar Conta</h2>
         <form onSubmit={handleLogin} className="space-y-4">
