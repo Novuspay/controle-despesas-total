@@ -26,7 +26,7 @@ const categoriasFixas = [
   { nome: 'Tarifas bancárias', tipo: 'saida' },
   { nome: 'Lazer e Hobbies', tipo: 'saida' },
   { nome: 'Bares e Restaurantes', tipo: 'saida' },
-  { nome: 'Cuidados pessoais', tipo: 'saida' }
+  { nome: 'Cuidados pessoais', tipo: 'saida' },
 ];
 
 export default categoriasFixas;
