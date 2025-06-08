@@ -1,5 +1,5 @@
 // src/components/NovaTransacao.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ function NovaTransacao() {
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
-  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
+  const categoriasFiltradas = categoriasFixas.filter(c => c.tipo === tipo);
 
   const handleSalvar = async (e) => {
     e.preventDefault();
@@ -96,7 +96,7 @@ function NovaTransacao() {
         >
           <option value="">Selecione uma categoria</option>
           {categoriasFiltradas.map((cat, index) => (
-            <option key={index} value={cat.name}>{cat.name}</option>
+            <option key={index} value={cat.nome}>{cat.nome}</option>
           ))}
         </select>
 
