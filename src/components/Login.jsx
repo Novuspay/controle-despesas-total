@@ -35,26 +35,26 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="block text-gray-700">Email</label>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 via-white to-green-200">
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md border border-gray-200">
+        <h2 className="text-3xl font-bold text-center text-green-600 mb-6">Acessar Conta</h2>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-gray-600 mb-1 text-sm">E-mail</label>
             <input
               type="email"
-              className="w-full px-4 py-2 border rounded"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
               placeholder="Seu email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="mb-2">
-            <label className="block text-gray-700">Senha</label>
+          <div>
+            <label className="block text-gray-600 mb-1 text-sm">Senha</label>
             <input
               type="password"
-              className="w-full px-4 py-2 border rounded"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
               placeholder="Sua senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
@@ -62,11 +62,11 @@ function Login() {
             />
           </div>
 
-          {erro && <p className="text-red-500 text-sm mb-3">{erro}</p>}
+          {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+            className="w-full bg-green-500 hover:bg-green-600 transition text-white font-medium py-2 rounded-md"
           >
             Entrar
           </button>
@@ -74,18 +74,18 @@ function Login() {
           <button
             type="button"
             onClick={handlePasswordReset}
-            className="text-blue-600 mt-3 hover:underline text-sm"
+            className="block text-center w-full text-sm text-green-600 hover:underline mt-1"
           >
             Esqueceu a senha?
           </button>
-
-          <div className="text-center mt-4 text-sm">
-            <span>Não tem uma conta? </span>
-            <Link to="/register" className="text-blue-500 hover:underline">
-              Criar conta
-            </Link>
-          </div>
         </form>
+
+        <div className="text-center text-sm text-gray-600 mt-6">
+          Não tem uma conta?{' '}
+          <Link to="/register" className="text-green-600 hover:underline">
+            Cadastre-se
+          </Link>
+        </div>
       </div>
     </div>
   );
