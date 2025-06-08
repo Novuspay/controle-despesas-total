@@ -1,6 +1,7 @@
 // src/components/Layout.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { auth } from '../firebase'; // <- IMPORTAÇÃO NECESSÁRIA
 
 function Layout({ children }) {
   return (
