@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { importarCategoriasFixas } from './importarCategoriasFixas';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -20,9 +21,10 @@ function Dashboard() {
   const [saidas, setSaidas] = useState(0);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUsuario(user);
+        await importarCategoriasFixas();
 
         const q = query(
           collection(db, 'transacoes'),
@@ -32,7 +34,7 @@ function Dashboard() {
         const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
           const lista = snapshot.docs
             .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .sort((a, b) => b.data?.seconds - a.data?.seconds); // ordem decrescente
+            .sort((a, b) => b.data?.seconds - a.data?.seconds);
 
           setTransacoes(lista);
 
@@ -123,27 +125,19 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex flex-wrap gap-4 justify-between mb-6">
-          <div className="flex gap-4">
-            <Link
-              to="/nova"
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            >
-              Nova Transação
-            </Link>
-            <Link
-              to="/categoria"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Nova Categoria
-            </Link>
-            <Link
-              to="/categorias"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Ver Categorias
-            </Link>
-          </div>
+        <div className="flex flex-wrap justify-between mb-6 gap-2">
+          <Link
+            to="/nova"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Nova Transação
+          </Link>
+          <Link
+            to="/categorias"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Ver Categorias
+          </Link>
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -166,9 +160,7 @@ function Dashboard() {
                       ? new Date(transacao.data.seconds * 1000).toLocaleDateString()
                       : 'Sem data'}
                   </span>
-                  <p className="text-xs text-gray-400 italic">
-                    {transacao.categoria || ''}
-                  </p>
+                  <p className="text-xs text-gray-400 italic">{transacao.categoria || ''}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span
