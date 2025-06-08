@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { Link, useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Register() {
   const [nome, setNome] = useState('');
@@ -17,20 +16,24 @@ function Register() {
     setErro('');
 
     if (senha !== confirmarSenha) {
-      setErro('As senhas não coincidem');
+      setErro('As senhas não coincidem.');
       return;
     }
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, senha);
-      await setDoc(doc(db, 'usuarios', cred.user.uid), {
-        nome,
-        email,
-        uid: cred.user.uid,
-      });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(userCredential.user, { displayName: nome });
       navigate('/dashboard');
     } catch (error) {
-      setErro('Erro ao criar conta: ' + error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        setErro('Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.');
+      } else if (error.code === 'auth/weak-password') {
+        setErro('A senha deve ter pelo menos 6 caracteres.');
+      } else if (error.code === 'auth/invalid-email') {
+        setErro('E-mail inválido. Verifique o formato.');
+      } else {
+        setErro('Erro ao criar conta. Tente novamente.');
+      }
     }
   };
 
