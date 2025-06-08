@@ -11,7 +11,6 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { importarCategoriasFixas } from './importarCategoriasFixas';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -21,10 +20,9 @@ function Dashboard() {
   const [saidas, setSaidas] = useState(0);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUsuario(user);
-        await importarCategoriasFixas();
 
         const q = query(
           collection(db, 'transacoes'),
@@ -125,7 +123,7 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex flex-wrap justify-between mb-6 gap-2">
+        <div className="flex justify-between mb-6">
           <Link
             to="/nova"
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
