@@ -1,28 +1,18 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  deleteDoc,
-  doc
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
   const [entradaTotal, setEntradaTotal] = useState(0);
   const [saidaTotal, setSaidaTotal] = useState(0);
-  const [nomeUsuario, setNomeUsuario] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const usuario = auth.currentUser;
     if (!usuario) return;
-
-    setNomeUsuario(usuario.displayName || usuario.email);
 
     const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -49,57 +39,74 @@ function Dashboard() {
   const saldo = entradaTotal - saidaTotal;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-indigo-900 to-slate-700 text-gray-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Bem-vindo, {nomeUsuario} 👋</h1>
-        </header>
+    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-8">
+        <span role="img" aria-label="money">💰</span> Controle de Gastos
+      </h1>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-          <div className="bg-white text-green-600 p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold">Entradas</h2>
-            <p className="text-2xl font-bold">R$ {entradaTotal.toFixed(2)}</p>
-          </div>
-          <div className="bg-white text-red-600 p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold">Saídas</h2>
-            <p className="text-2xl font-bold">R$ {saidaTotal.toFixed(2)}</p>
-          </div>
-          <div className="bg-white text-emerald-600 p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold">Saldo Atual</h2>
-            <p className="text-2xl font-bold">R$ {saldo.toFixed(2)}</p>
-          </div>
-        </section>
+      {/* Resumo Financeiro */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-green-500">🟢</span> Total de Entradas
+          </p>
+          <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-red-500">🔴</span> Total de Saídas
+          </p>
+          <p className="text-xl text-red-600 font-bold">R$ {saidaTotal.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-blue-500">🔵</span> Saldo Atual
+          </p>
+          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
+        </div>
+      </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow text-gray-800">
-            <h2 className="text-xl font-semibold text-indigo-600 mb-4">Nova Transação</h2>
-            <button
-              onClick={() => navigate('/nova')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded w-full"
-            >
-              Ir para o Formulário
-            </button>
-          </div>
+      {/* Área de Transações */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Nova Transação */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">
+            ➕ Nova Transação
+          </h2>
+          <button
+            onClick={() => navigate('/nova')}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white w-full rounded-lg py-2 font-medium transition"
+          >
+            Ir para o Formulário
+          </button>
+        </div>
 
-          <div className="bg-white p-6 rounded-lg shadow text-gray-800">
-            <h2 className="text-xl font-semibold text-red-500 mb-4">Transações</h2>
-            <ul className="space-y-3 max-h-[400px] overflow-y-auto">
-              {transacoes.length === 0 && <li className="text-gray-500">Nenhuma transação cadastrada.</li>}
+        {/* Lista de Transações */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
+            📄 Transações
+          </h2>
+
+          {transacoes.length === 0 ? (
+            <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+          ) : (
+            <ul className="divide-y text-sm">
               {transacoes.map((t) => (
-                <li key={t.id} className="flex justify-between items-center border-b pb-2">
+                <li key={t.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <p className="font-semibold">{t.descricao || '(Sem descrição)'}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')} {t.categoria && ` - ${t.categoria}`}
+                    <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
+                    <p className="text-gray-500">
+                      {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
+                      {t.categoria && ` - ${t.categoria}`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className={t.tipo === 'entrada' ? 'text-green-600' : 'text-red-600'}>
+                    <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                       {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
                     </p>
                     <button
                       onClick={() => handleExcluir(t.id)}
-                      className="text-red-500 text-sm hover:underline mt-1"
+                      className="text-red-500 hover:underline text-xs mt-1"
                     >
                       Excluir
                     </button>
@@ -107,8 +114,8 @@ function Dashboard() {
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
+          )}
+        </div>
       </div>
     </div>
   );
