@@ -8,17 +8,16 @@ export const importarCategoriasFixas = async () => {
   if (!usuario) return;
 
   const snapshot = await getDocs(collection(db, 'categorias'));
-  const jaExistem = snapshot.docs.some((doc) => doc.data().uid === usuario.uid);
+  const categoriasExistentes = snapshot.docs.map((doc) => doc.data().nome);
 
-  if (jaExistem) return;
-
-  const promessas = categoriasFixas.map((cat) =>
-    addDoc(collection(db, 'categorias'), {
-      ...cat,
-      uid: usuario.uid,
-      criadoEm: new Date()
-    })
-  );
-
-  await Promise.all(promessas);
+  for (const categoria of categoriasFixas) {
+    if (!categoriasExistentes.includes(categoria.nome)) {
+      await addDoc(collection(db, 'categorias'), {
+        nome: categoria.nome,
+        tipo: categoria.tipo,
+        uid: usuario.uid,
+        criadoEm: new Date()
+      });
+    }
+  }
 };
