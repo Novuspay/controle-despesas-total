@@ -2,15 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
   const [entradaTotal, setEntradaTotal] = useState(0);
   const [saidaTotal, setSaidaTotal] = useState(0);
-  const [filtroTipo, setFiltroTipo] = useState('todos');
-  const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [filtroMes, setFiltroMes] = useState('todos');
+  const [filtros, setFiltros] = useState({ tipo: '', categoria: '', mes: '' });
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -41,23 +38,24 @@ function Dashboard() {
   const saldo = entradaTotal - saidaTotal;
 
   const transacoesFiltradas = transacoes.filter((t) => {
-    const tipoOk = filtroTipo === 'todos' || t.tipo === filtroTipo;
-    const categoriaOk = filtroCategoria === 'todas' || t.categoria === filtroCategoria;
-    const mesOk = filtroMes === 'todos' ||
-      new Date(t.data?.toDate?.() || t.data).getMonth() === Number(filtroMes);
-    return tipoOk && categoriaOk && mesOk;
+    const data = new Date(t.data?.toDate?.() || t.data);
+    const mesAtual = (data.getMonth() + 1).toString().padStart(2, '0');
+    return (
+      (!filtros.tipo || t.tipo === filtros.tipo) &&
+      (!filtros.categoria || t.categoria === filtros.categoria) &&
+      (!filtros.mes || filtros.mes === mesAtual)
+    );
   });
 
-  const categoriasUnicas = [...new Set(transacoes.map(t => t.categoria))];
+  const todasCategorias = [...new Set(transacoes.map((t) => t.categoria).filter(Boolean))];
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
-        <p className="text-sm font-normal text-indigo-200 mt-1">Controle cada real que entra e sai</p>
       </h1>
+      <p className="text-sm text-center text-white mb-6">Controle cada real que entra e sai</p>
 
-      {/* Resumo Financeiro */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
@@ -79,8 +77,8 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Área de Transações */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Nova Transação */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">
             ➕ Nova Transação
@@ -93,28 +91,30 @@ function Dashboard() {
           </button>
         </div>
 
+        {/* Lista de Transações */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
             📄 Transações
           </h2>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded p-1 text-sm">
-              <option value="todos">Todos os tipos</option>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+            <select onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })} className="border rounded p-1">
+              <option value="">Todos os tipos</option>
               <option value="entrada">Entradas</option>
               <option value="saida">Saídas</option>
             </select>
-            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded p-1 text-sm">
-              <option value="todas">Todas as categorias</option>
-              {categoriasUnicas.map((c, i) => (
+            <select onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })} className="border rounded p-1">
+              <option value="">Todas as categorias</option>
+              {todasCategorias.map((c, i) => (
                 <option key={i} value={c}>{c}</option>
               ))}
             </select>
-            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded p-1 text-sm">
-              <option value="todos">Todos os meses</option>
-              {[...Array(12).keys()].map((m) => (
-                <option key={m} value={m}>{format(new Date(2025, m, 1), 'MMMM')}</option>
-              ))}
+            <select onChange={(e) => setFiltros({ ...filtros, mes: e.target.value })} className="border rounded p-1">
+              <option value="">Todos os meses</option>
+              {[...Array(12)].map((_, i) => {
+                const m = (i + 1).toString().padStart(2, '0');
+                return <option key={m} value={m}>{m}</option>;
+              })}
             </select>
           </div>
 
