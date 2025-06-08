@@ -1,6 +1,5 @@
 // src/categoriasFixas.js
-
-export const categoriasFixas = [
+const categoriasFixas = [
   // ENTRADAS
   { nome: 'Salários', tipo: 'entrada' },
   { nome: 'Freelance', tipo: 'entrada' },
@@ -29,3 +28,5 @@ export const categoriasFixas = [
   { nome: 'Bares e Restaurantes', tipo: 'saida' },
   { nome: 'Cuidados pessoais', tipo: 'saida' }
 ];
+
+export default categoriasFixas;
