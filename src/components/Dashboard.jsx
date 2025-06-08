@@ -1,16 +1,36 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
-import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  addDoc,
+  Timestamp,
+} from 'firebase/firestore';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
   const [entradaTotal, setEntradaTotal] = useState(0);
   const [saidaTotal, setSaidaTotal] = useState(0);
-  const [filtros, setFiltros] = useState({ tipo: '', categoria: '', mes: '' });
+
+  const [tipo, setTipo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [valor, setValor] = useState('');
+  const [data, setData] = useState('');
+  const [erro, setErro] = useState('');
+
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  const [filtroMes, setFiltroMes] = useState('todos');
+
+  const usuario = auth.currentUser;
 
   useEffect(() => {
-    const usuario = auth.currentUser;
     if (!usuario) return;
 
     const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
@@ -25,7 +45,33 @@ function Dashboard() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [usuario]);
+
+  const handleNovaTransacao = async (e) => {
+    e.preventDefault();
+    setErro('');
+    if (!tipo || !valor || !data) {
+      setErro('Preencha os campos obrigatórios.');
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'transacoes'), {
+        uid: usuario.uid,
+        tipo,
+        descricao,
+        categoria,
+        valor: parseFloat(valor),
+        data: Timestamp.fromDate(new Date(data)),
+      });
+      setTipo('');
+      setDescricao('');
+      setCategoria('');
+      setValor('');
+      setData('');
+    } catch (err) {
+      setErro('Erro ao salvar transação.');
+    }
+  };
 
   const handleExcluir = async (id) => {
     try {
@@ -38,23 +84,20 @@ function Dashboard() {
   const saldo = entradaTotal - saidaTotal;
 
   const transacoesFiltradas = transacoes.filter((t) => {
-    const data = new Date(t.data?.toDate?.() || t.data);
-    const mesAtual = (data.getMonth() + 1).toString().padStart(2, '0');
-    return (
-      (!filtros.tipo || t.tipo === filtros.tipo) &&
-      (!filtros.categoria || t.categoria === filtros.categoria) &&
-      (!filtros.mes || filtros.mes === mesAtual)
-    );
+    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
+    const mesTransacao = dataTransacao.getMonth();
+    const filtroPorTipo = filtroTipo === 'todos' || t.tipo === filtroTipo;
+    const filtroPorCategoria = filtroCategoria === 'todas' || t.categoria === filtroCategoria;
+    const filtroPorMes = filtroMes === 'todos' || mesTransacao === parseInt(filtroMes);
+    return filtroPorTipo && filtroPorCategoria && filtroPorMes;
   });
-
-  const todasCategorias = [...new Set(transacoes.map((t) => t.categoria).filter(Boolean))];
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-1">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
-      <p className="text-sm text-center text-white mb-6">Controle cada real que entra e sai</p>
+      <p className="text-center text-sm text-white mb-8">Controle cada real que entra e sai</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-4 text-center">
@@ -78,43 +121,107 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Nova Transação */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">
             ➕ Nova Transação
           </h2>
-          <button
-            onClick={() => window.location.href = '/nova'}
-            className="bg-indigo-500 hover:bg-indigo-600 text-white w-full rounded-lg py-2 font-medium transition"
-          >
-            Ir para o Formulário
-          </button>
+          <form onSubmit={handleNovaTransacao} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Tipo:</label>
+              <select
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                required
+              >
+                <option value="">Selecione o tipo</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Descrição:</label>
+              <input
+                type="text"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                placeholder="Ex: Salário, Alimentação, etc."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Categoria:</label>
+              <input
+                type="text"
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Valor (R$):</label>
+              <input
+                type="number"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Data:</label>
+              <input
+                type="date"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                required
+              />
+            </div>
+            {erro && <p className="text-red-500 text-sm">{erro}</p>}
+            <button
+              type="submit"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold"
+            >
+              Adicionar Transação
+            </button>
+          </form>
         </div>
 
-        {/* Lista de Transações */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
             📄 Transações
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-            <select onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })} className="border rounded p-1">
-              <option value="">Todos os tipos</option>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="todos">Todos os tipos</option>
               <option value="entrada">Entradas</option>
               <option value="saida">Saídas</option>
             </select>
-            <select onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })} className="border rounded p-1">
-              <option value="">Todas as categorias</option>
-              {todasCategorias.map((c, i) => (
-                <option key={i} value={c}>{c}</option>
+            <select
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="todas">Todas as categorias</option>
+              {[...new Set(transacoes.map((t) => t.categoria).filter(Boolean))].map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
-            <select onChange={(e) => setFiltros({ ...filtros, mes: e.target.value })} className="border rounded p-1">
-              <option value="">Todos os meses</option>
-              {[...Array(12)].map((_, i) => {
-                const m = (i + 1).toString().padStart(2, '0');
-                return <option key={m} value={m}>{m}</option>;
-              })}
+            <select
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="todos">Todos os meses</option>
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i} value={i}>{new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}</option>
+              ))}
             </select>
           </div>
 
