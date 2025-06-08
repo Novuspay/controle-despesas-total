@@ -1,187 +1,133 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { useNavigate, Link } from 'react-router-dom';
 import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
 function Dashboard() {
-  const navigate = useNavigate();
-  const [usuario, setUsuario] = useState(null);
   const [transacoes, setTransacoes] = useState([]);
-  const [entradas, setEntradas] = useState(0);
-  const [saidas, setSaidas] = useState(0);
+  const [entradaTotal, setEntradaTotal] = useState(0);
+  const [saidaTotal, setSaidaTotal] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUsuario(user);
+    const usuario = auth.currentUser;
+    if (!usuario) return;
 
-        const q = query(
-          collection(db, 'transacoes'),
-          where('uid', '==', user.uid)
-        );
+    const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setTransacoes(lista);
 
-        const unsubscribeFirestore = onSnapshot(q, (snapshot) => {
-          const lista = snapshot.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .sort((a, b) => b.data?.seconds - a.data?.seconds);
-
-          setTransacoes(lista);
-
-          const totalEntradas = lista
-            .filter((t) => t.tipo === 'entrada')
-            .reduce((acc, curr) => acc + Number(curr.valor), 0);
-
-          const totalSaidas = lista
-            .filter((t) => t.tipo === 'saida')
-            .reduce((acc, curr) => acc + Number(curr.valor), 0);
-
-          setEntradas(totalEntradas);
-          setSaidas(totalSaidas);
-        });
-
-        return () => unsubscribeFirestore();
-      } else {
-        navigate('/login');
-      }
+      const entradas = lista.filter((t) => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+      const saidas = lista.filter((t) => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+      setEntradaTotal(entradas);
+      setSaidaTotal(saidas);
     });
 
-    return () => unsubscribeAuth();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/login');
-  };
+    return () => unsubscribe();
+  }, []);
 
   const handleExcluir = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-      try {
-        await deleteDoc(doc(db, 'transacoes', id));
-      } catch (err) {
-        console.error('Erro ao excluir:', err);
-      }
+    try {
+      await deleteDoc(doc(db, 'transacoes', id));
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
     }
   };
 
-  const saldo = entradas - saidas;
-  const dadosGrafico = [
-    { name: 'Entradas', value: entradas },
-    { name: 'Saídas', value: saidas }
+  const saldo = entradaTotal - saidaTotal;
+  const dataGrafico = [
+    { name: 'Entradas', value: entradaTotal },
+    { name: 'Saídas', value: saidaTotal },
   ];
-  const cores = ['#3B82F6', '#EF4444'];
+
+  const cores = ['#3b82f6', '#ef4444'];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-3xl mx-auto bg-white shadow-md rounded p-6">
-        <h1 className="text-3xl font-bold mb-2">
-          Olá, {usuario?.displayName || usuario?.email || 'Usuário'} 👋
-        </h1>
-        <p className="text-gray-600 mb-6">Bem-vindo ao seu painel de controle</p>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Olá, {auth.currentUser?.email} 👋</h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-100 text-blue-800 p-4 rounded shadow">
-            <h2 className="font-semibold">Entradas</h2>
-            <p className="text-xl font-bold">R$ {entradas.toFixed(2)}</p>
-          </div>
-          <div className="bg-red-100 text-red-800 p-4 rounded shadow">
-            <h2 className="font-semibold">Saídas</h2>
-            <p className="text-xl font-bold">R$ {saidas.toFixed(2)}</p>
-          </div>
-          <div className="bg-green-100 text-green-800 p-4 rounded shadow">
-            <h2 className="font-semibold">Saldo Atual</h2>
-            <p className="text-xl font-bold">R$ {saldo.toFixed(2)}</p>
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-blue-100 text-blue-800 p-4 rounded shadow">
+          <h2 className="text-lg font-semibold">Entradas</h2>
+          <p className="text-xl">R$ {entradaTotal.toFixed(2)}</p>
         </div>
-
-        <div className="w-full h-64 mb-6">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={dadosGrafico}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label
-              >
-                {dadosGrafico.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={cores[index % cores.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="bg-red-100 text-red-800 p-4 rounded shadow">
+          <h2 className="text-lg font-semibold">Saídas</h2>
+          <p className="text-xl">R$ {saidaTotal.toFixed(2)}</p>
         </div>
-
-        <div className="flex justify-between mb-6">
-          <Link
-            to="/nova"
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Nova Transação
-          </Link>
-          <Link
-            to="/categorias"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Ver Categorias
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Sair
-          </button>
+        <div className="bg-green-100 text-green-800 p-4 rounded shadow">
+          <h2 className="text-lg font-semibold">Saldo Atual</h2>
+          <p className="text-xl">R$ {saldo.toFixed(2)}</p>
         </div>
-
-        <h2 className="text-xl font-semibold mb-2">Transações Recentes</h2>
-        {transacoes.length === 0 ? (
-          <p className="text-gray-500">Nenhuma transação cadastrada.</p>
-        ) : (
-          <ul className="divide-y divide-gray-200">
-            {transacoes.map((transacao) => (
-              <li key={transacao.id} className="py-2 flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{transacao.descricao || 'Sem descrição'}</p>
-                  <span className="text-sm text-gray-500">
-                    {transacao.data?.seconds
-                      ? new Date(transacao.data.seconds * 1000).toLocaleDateString()
-                      : 'Sem data'}
-                  </span>
-                  <p className="text-xs text-gray-400 italic">{transacao.categoria || ''}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span
-                    className={
-                      transacao.tipo === 'entrada'
-                        ? 'text-green-600 font-bold'
-                        : 'text-red-600 font-bold'
-                    }
-                  >
-                    {transacao.tipo === 'entrada' ? '+' : '-'} R$ {transacao.valor.toFixed(2)}
-                  </span>
-                  <button
-                    onClick={() => handleExcluir(transacao.id)}
-                    className="text-sm bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200"
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      <PieChart width={300} height={300} className="mx-auto">
+        <Pie
+          data={dataGrafico}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label
+        >
+          {dataGrafico.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={cores[index % cores.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+
+      <div className="flex gap-4 mt-6">
+        <button
+          onClick={() => navigate('/nova')}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+          Nova Transação
+        </button>
+        <button
+          onClick={() => navigate('/categorias')}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Ver Categorias
+        </button>
+        <button
+          onClick={() => auth.signOut() && navigate('/')}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-auto"
+        >
+          Sair
+        </button>
+      </div>
+
+      <h2 className="text-xl font-bold mt-10 mb-2">Transações Recentes</h2>
+      <ul>
+        {transacoes.length === 0 && <li className="text-gray-500">Nenhuma transação cadastrada.</li>}
+        {transacoes.map((t) => (
+          <li key={t.id} className="flex justify-between items-center border-b py-2">
+            <div>
+              <p className="font-semibold">{t.descricao || '(Sem descrição)'}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')} {t.categoria && ` - ${t.categoria}`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={t.tipo === 'entrada' ? 'text-green-600' : 'text-red-600'}>
+                {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
+              </p>
+              <button
+                onClick={() => handleExcluir(t.id)}
+                className="text-red-500 text-sm hover:underline ml-4"
+              >
+                Excluir
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
