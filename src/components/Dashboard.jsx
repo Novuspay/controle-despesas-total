@@ -90,12 +90,6 @@ function Dashboard() {
           Nova Transação
         </button>
         <button
-          onClick={() => navigate('/categorias')}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Ver Categorias
-        </button>
-        <button
           onClick={() => auth.signOut() && navigate('/')}
           className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-auto"
         >
