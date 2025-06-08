@@ -1,42 +1,20 @@
 // src/components/NovaTransacao.jsx
-import React, { useEffect, useState } from 'react';
-import { addDoc, collection, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
+import categoriasFixas from '../categoriasFixas';
 
 function NovaTransacao() {
   const [tipo, setTipo] = useState('entrada');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState('');
-  const [categorias, setCategorias] = useState([]);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (usuario) => {
-      if (usuario) {
-        const q = query(
-          collection(db, 'categorias'),
-          where('uid', '==', usuario.uid)
-        );
-
-        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-          const lista = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setCategorias(lista);
-        });
-
-        return () => unsubscribeSnapshot();
-      }
-    });
-
-    return () => unsubscribeAuth();
-  }, []);
+  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
   const handleSalvar = async (e) => {
     e.preventDefault();
@@ -76,7 +54,10 @@ function NovaTransacao() {
 
         <select
           value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
+          onChange={(e) => {
+            setTipo(e.target.value);
+            setCategoriaSelecionada('');
+          }}
           className="w-full p-2 border border-gray-300 rounded mb-4"
         >
           <option value="entrada">Entrada</option>
@@ -114,8 +95,8 @@ function NovaTransacao() {
           required
         >
           <option value="">Selecione uma categoria</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.nome}>{cat.nome}</option>
+          {categoriasFiltradas.map((cat, index) => (
+            <option key={index} value={cat.name}>{cat.name}</option>
           ))}
         </select>
 
