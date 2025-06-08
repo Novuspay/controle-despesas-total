@@ -14,7 +14,7 @@ function NovaTransacao() {
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
-  const categoriasFiltradas = categoriasFixas.filter(c => c.tipo === tipo);
+  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
   const handleSalvar = async (e) => {
     e.preventDefault();
@@ -54,10 +54,7 @@ function NovaTransacao() {
 
         <select
           value={tipo}
-          onChange={(e) => {
-            setTipo(e.target.value);
-            setCategoriaSelecionada('');
-          }}
+          onChange={(e) => setTipo(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded mb-4"
         >
           <option value="entrada">Entrada</option>
@@ -95,8 +92,8 @@ function NovaTransacao() {
           required
         >
           <option value="">Selecione uma categoria</option>
-          {categoriasFiltradas.map((cat, index) => (
-            <option key={index} value={cat.nome}>{cat.nome}</option>
+          {categoriasFiltradas.map((cat, idx) => (
+            <option key={idx} value={cat.nome}>{cat.nome}</option>
           ))}
         </select>
 
