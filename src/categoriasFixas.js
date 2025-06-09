@@ -27,6 +27,7 @@ const categoriasFixas = [
   { nome: 'Lazer e Hobbies', tipo: 'saida' },
   { nome: 'Bares e Restaurantes', tipo: 'saida' },
   { nome: 'Cuidados pessoais', tipo: 'saida' },
+  { nome: 'Outros', tipo: 'saida' },
 ];
 
 export default categoriasFixas;
