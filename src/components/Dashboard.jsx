@@ -26,32 +26,55 @@ function Dashboard() {
   const [filtroMes, setFiltroMes] = useState('');
 
   useEffect(() => {
-    const usuario = auth.currentUser;
-    if (!usuario) return;
+    const unsubscribeAuth = auth.onAuthStateChanged((usuario) => {
+      if (usuario) {
+        carregarTransacoes(usuario);
+        carregarCategorias(usuario);
+      }
+    });
 
+    return () => unsubscribeAuth();
+  }, []);
+
+  const carregarTransacoes = (usuario) => {
     const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    onSnapshot(q, (snapshot) => {
       const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setTransacoes(lista);
-
       const entradas = lista.filter((t) => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
       const saidas = lista.filter((t) => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
       setEntradaTotal(entradas);
       setSaidaTotal(saidas);
     });
+  };
 
-    const catQuery = query(collection(db, 'categorias'), where('uid', '==', usuario.uid));
-    getDocs(catQuery).then((snapshot) => {
-      const lista = snapshot.docs.map((doc) => doc.data().nome);
-      setCategorias(lista);
-    });
+  const carregarCategorias = async (usuario) => {
+    const q = query(collection(db, 'categorias'), where('uid', '==', usuario.uid));
+    const snapshot = await getDocs(q);
+    const lista = snapshot.docs.map((doc) => doc.data().nome);
+    setCategorias(lista);
+  };
 
-    return () => unsubscribe();
-  }, []);
+  const handleExcluir = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'transacoes', id));
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+    }
+  };
 
   const handleAdicionar = async () => {
     const usuario = auth.currentUser;
-    if (!usuario || !tipo || !descricao || !valor || !data || !categoria) return;
+
+    if (!usuario) {
+      alert('Usuário não autenticado.');
+      return;
+    }
+
+    if (!tipo || !descricao || !valor || !data || !categoria) {
+      alert('Preencha todos os campos.');
+      return;
+    }
 
     const nova = {
       tipo,
@@ -71,14 +94,7 @@ function Dashboard() {
       setData('');
     } catch (error) {
       console.error('Erro ao adicionar transação:', error);
-    }
-  };
-
-  const handleExcluir = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'transacoes', id));
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
+      alert('Erro ao adicionar transação.');
     }
   };
 
@@ -91,14 +107,17 @@ function Dashboard() {
 
     const condTipo = !filtroTipo || t.tipo === filtroTipo;
     const condCategoria = !filtroCategoria || t.categoria === filtroCategoria;
-    const condMes = !filtroMes || (parseInt(filtroMes) === mesTransacao && anoTransacao === hoje.getFullYear());
+    const condMes =
+      !filtroMes || (parseInt(filtroMes) === mesTransacao && anoTransacao === hoje.getFullYear());
 
     return condTipo && condCategoria && condMes;
   });
 
+  const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-3xl font-bold text-center text-white mb-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
@@ -121,47 +140,37 @@ function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-indigo-600 mb-4">➕ Nova Transação</h2>
-
           <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
             <option value="">Selecione o tipo</option>
             <option value="entrada">Entrada</option>
             <option value="saida">Saída</option>
           </select>
-
-          <input type="text" placeholder="Ex: Salário, Alimentação, etc." value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
-
+          <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
             <option value="">Selecione a categoria</option>
             {categorias.map((cat, i) => (
               <option key={i} value={cat}>{cat}</option>
             ))}
           </select>
-
           <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
           <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full mb-4 border rounded px-3 py-2" />
-
-          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">
-            Adicionar Transação
-          </button>
+          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">Adicionar Transação</button>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-red-600 mb-4">📄 Transações</h2>
-
           <div className="flex gap-2 mb-4">
             <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
               <option value="">Todos os tipos</option>
               <option value="entrada">Entrada</option>
               <option value="saida">Saída</option>
             </select>
-
             <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
               <option value="">Todas as categorias</option>
               {categorias.map((cat, i) => (
                 <option key={i} value={cat}>{cat}</option>
               ))}
             </select>
-
             <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
               <option value="">Todos os meses</option>
               {[...Array(12)].map((_, i) => (
@@ -187,12 +196,7 @@ function Dashboard() {
                     <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                       {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
                     </p>
-                    <button
-                      onClick={() => handleExcluir(t.id)}
-                      className="text-red-500 hover:underline text-xs mt-1"
-                    >
-                      Excluir
-                    </button>
+                    <button onClick={() => handleExcluir(t.id)} className="text-red-500 hover:underline text-xs mt-1">Excluir</button>
                   </div>
                 </li>
               ))}
