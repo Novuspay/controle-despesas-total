@@ -96,17 +96,6 @@ function Dashboard() {
   const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
-  const dadosMensais = Array.from({ length: 12 }, (_, i) => {
-    const mes = i;
-    const total = transacoes
-      .filter((t) => new Date(t.data?.toDate?.() || t.data).getMonth() === mes)
-      .reduce((acc, t) => acc + t.valor, 0);
-    return { mes, total };
-  });
-
-  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  const maxValor = Math.max(...dadosMensais.map((d) => d.total), 1);
-
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
@@ -135,33 +124,94 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-lg font-bold text-purple-600 mb-4">Gráfico Mensal</h2>
-        <svg viewBox="0 0 600 200" className="w-full h-48">
-          {dadosMensais.map((dado, i) => {
-            const altura = (dado.total / maxValor) * 150;
-            return (
-              <g key={i}>
-                <rect
-                  x={i * 50 + 20}
-                  y={180 - altura}
-                  width="30"
-                  height={altura}
-                  fill="#6366f1"
-                />
-                <text x={i * 50 + 35} y="195" fontSize="10" textAnchor="middle">
-                  {meses[i]}
-                </text>
-                <text x={i * 50 + 35} y={180 - altura - 5} fontSize="10" textAnchor="middle" fill="#333">
-                  R$ {dado.total.toFixed(0)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">➕ Nova Transação</h2>
 
-      {/* restante do componente segue igual (formulário, lista, filtros...) */}
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione o tipo</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+
+          <input type="text" placeholder="Ex: Salário, Alimentação, etc." value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione a categoria</option>
+            {categoriasFiltradas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+
+          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full mb-4 border rounded px-3 py-2" />
+
+          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">
+            Adicionar Transação
+          </button>
+
+          <div className="bg-gray-100 rounded p-4 text-center mt-6">
+            <p className="text-xs text-gray-500">Transações</p>
+            <p className="text-lg font-bold">{transacoesFiltradas.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">📄 Transações</h2>
+
+          <div className="flex gap-2 mb-4">
+            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todos os tipos</option>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+            </select>
+
+            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todas as categorias</option>
+              {categoriasFixas.map((cat, i) => (
+                <option key={i} value={cat.nome}>{cat.nome}</option>
+              ))}
+            </select>
+
+            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todos os meses</option>
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>{i + 1}</option>
+              ))}
+            </select>
+          </div>
+
+          {transacoesFiltradas.length === 0 ? (
+            <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {transacoesFiltradas.map((t) => (
+                <li key={t.id} className="py-3 flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
+                    <p className="text-gray-500">
+                      {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
+                      {t.categoria && ` - ${t.categoria}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                      {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => handleExcluir(t.id)}
+                      className="text-red-500 hover:underline text-xs mt-1"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
