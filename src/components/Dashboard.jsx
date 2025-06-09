@@ -6,33 +6,33 @@ import {
   query,
   where,
   onSnapshot,
+  addDoc,
   deleteDoc,
   doc,
-  addDoc,
   getDocs
 } from 'firebase/firestore';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [entradaTotal, setEntradaTotal] = useState(0);
+  const [saidaTotal, setSaidaTotal] = useState(0);
   const [tipo, setTipo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState('');
   const [valor, setValor] = useState('');
   const [data, setData] = useState('');
-  const [entradaTotal, setEntradaTotal] = useState(0);
-  const [saidaTotal, setSaidaTotal] = useState(0);
-  const [filtroTipo, setFiltroTipo] = useState('todos');
-  const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [filtroMes, setFiltroMes] = useState('todos');
+  const [categorias, setCategorias] = useState([]);
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroMes, setFiltroMes] = useState('');
 
   const usuario = auth.currentUser;
 
   useEffect(() => {
     if (!usuario) return;
 
-    const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const transacoesQuery = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
+    const unsubscribe = onSnapshot(transacoesQuery, (snapshot) => {
       const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setTransacoes(lista);
 
@@ -46,51 +46,51 @@ function Dashboard() {
   }, [usuario]);
 
   useEffect(() => {
-    if (!usuario) return;
-    const q = query(collection(db, 'categorias'), where('uid', '==', usuario.uid));
-    getDocs(q).then((snapshot) => {
+    if (!usuario || !tipo) return;
+
+    const categoriasQuery = query(
+      collection(db, 'categorias'),
+      where('uid', '==', usuario.uid),
+      where('tipo', '==', tipo)
+    );
+
+    onSnapshot(categoriasQuery, (snapshot) => {
       const lista = snapshot.docs.map((doc) => doc.data().nome);
       setCategorias(lista);
     });
-  }, [usuario]);
+  }, [usuario, tipo]);
 
-  const handleExcluir = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'transacoes', id));
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
-    }
-  };
-
-  const handleAdicionar = async () => {
+  const handleNovaTransacao = async () => {
     if (!tipo || !descricao || !categoria || !valor || !data) return;
 
-    try {
-      await addDoc(collection(db, 'transacoes'), {
-        uid: usuario.uid,
-        tipo,
-        descricao,
-        categoria,
-        valor: parseFloat(valor),
-        data: new Date(data)
-      });
-      setTipo('');
-      setDescricao('');
-      setCategoria('');
-      setValor('');
-      setData('');
-    } catch (error) {
-      console.error('Erro ao adicionar:', error);
-    }
+    await addDoc(collection(db, 'transacoes'), {
+      uid: usuario.uid,
+      tipo,
+      descricao,
+      categoria,
+      valor: parseFloat(valor),
+      data: new Date(data)
+    });
+
+    setTipo('');
+    setDescricao('');
+    setCategoria('');
+    setValor('');
+    setData('');
+  };
+
+  const handleExcluir = async (id) => {
+    await deleteDoc(doc(db, 'transacoes', id));
   };
 
   const saldo = entradaTotal - saidaTotal;
+
   const transacoesFiltradas = transacoes.filter((t) => {
-    const tipoOk = filtroTipo === 'todos' || t.tipo === filtroTipo;
-    const catOk = filtroCategoria === 'todas' || t.categoria === filtroCategoria;
-    const dataObj = new Date(t.data.seconds * 1000);
-    const mesOk = filtroMes === 'todos' || dataObj.getMonth() + 1 === parseInt(filtroMes);
-    return tipoOk && catOk && mesOk;
+    return (
+      (!filtroTipo || t.tipo === filtroTipo) &&
+      (!filtroCategoria || t.categoria === filtroCategoria) &&
+      (!filtroMes || new Date(t.data).getMonth() + 1 === parseInt(filtroMes))
+    );
   });
 
   return (
@@ -98,9 +98,9 @@ function Dashboard() {
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img">💰</span> Controle de Gastos
       </h1>
-      <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
+      <p className="text-center text-sm text-white mb-8">Controle cada real que entra e sai</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
             <span className="text-green-500">🟢</span> Total de Entradas
@@ -124,44 +124,84 @@ function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">➕ Nova Transação</h2>
-          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="mb-2 w-full border rounded p-2">
+
+          <select
+            className="w-full mb-3 p-2 border rounded"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+          >
             <option value="">Selecione o tipo</option>
             <option value="entrada">Entrada</option>
             <option value="saida">Saída</option>
           </select>
-          <input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Salário, Alimentação, etc." className="mb-2 w-full border rounded p-2" />
-          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="mb-2 w-full border rounded p-2">
+
+          <input
+            className="w-full mb-3 p-2 border rounded"
+            type="text"
+            placeholder="Ex: Salário, Alimentação, etc."
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
+
+          <select
+            className="w-full mb-3 p-2 border rounded"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+          >
             <option value="">Selecione a categoria</option>
-            {categorias.map((cat, idx) => (
-              <option key={idx} value={cat}>{cat}</option>
+            {categorias.map((cat, i) => (
+              <option key={i} value={cat}>{cat}</option>
             ))}
           </select>
-          <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor (R$)" className="mb-2 w-full border rounded p-2" />
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="mb-4 w-full border rounded p-2" />
-          <button onClick={handleAdicionar} className="w-full bg-blue-500 text-white py-2 rounded">Adicionar Transação</button>
-          <div className="text-center mt-4 bg-gray-100 p-2 rounded text-sm">
-            <p className="font-medium text-gray-600">Transações</p>
-            <p className="text-xl font-bold">{transacoes.length}</p>
+
+          <input
+            className="w-full mb-3 p-2 border rounded"
+            type="number"
+            placeholder="Valor"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+          />
+
+          <input
+            className="w-full mb-3 p-2 border rounded"
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+          />
+
+          <button
+            onClick={handleNovaTransacao}
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          >
+            Adicionar Transação
+          </button>
+
+          <div className="bg-gray-100 rounded mt-6 p-3 text-center">
+            <p className="text-sm text-gray-500">Transações</p>
+            <p className="text-xl font-semibold">{transacoesFiltradas.length}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">📄 Transações</h2>
-          <div className="flex gap-2 mb-4">
-            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded p-2 text-sm">
-              <option value="todos">Todos os tipos</option>
-              <option value="entrada">Entradas</option>
-              <option value="saida">Saídas</option>
+
+          <div className="flex gap-2 mb-4 text-sm">
+            <select className="border p-1 rounded" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+              <option value="">Todos os tipos</option>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
             </select>
-            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded p-2 text-sm">
-              <option value="todas">Todas as categorias</option>
-              {categorias.map((cat, idx) => (
-                <option key={idx} value={cat}>{cat}</option>
+            <select className="border p-1 rounded" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+              <option value="">Todas as categorias</option>
+              {[...new Set(transacoes.map((t) => t.categoria))].map((cat, i) => (
+                <option key={i} value={cat}>{cat}</option>
               ))}
             </select>
-            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded p-2 text-sm">
-              <option value="todos">Todos os meses</option>
-              {[...Array(12).keys()].map(m => <option key={m + 1} value={m + 1}>{(m + 1).toString().padStart(2, '0')}</option>)}
+            <select className="border p-1 rounded" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
+              <option value="">Todos os meses</option>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
+                <option key={mes} value={mes}>{String(mes).padStart(2, '0')}</option>
+              ))}
             </select>
           </div>
 
@@ -172,17 +212,19 @@ function Dashboard() {
               {transacoesFiltradas.map((t) => (
                 <li key={t.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
-                    <p className="text-gray-500">
-                      {new Date(t.data.seconds * 1000).toLocaleDateString('pt-BR')}
-                      {t.categoria && ` - ${t.categoria}`}
-                    </p>
+                    <p className="font-medium">{t.descricao}</p>
+                    <p className="text-gray-500">{new Date(t.data).toLocaleDateString('pt-BR')} - {t.categoria}</p>
                   </div>
                   <div className="text-right">
                     <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                       {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
                     </p>
-                    <button onClick={() => handleExcluir(t.id)} className="text-red-500 hover:underline text-xs mt-1">Excluir</button>
+                    <button
+                      onClick={() => handleExcluir(t.id)}
+                      className="text-red-500 hover:underline text-xs mt-1"
+                    >
+                      Excluir
+                    </button>
                   </div>
                 </li>
               ))}
