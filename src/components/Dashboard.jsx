@@ -1,4 +1,3 @@
-// src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import {
@@ -8,9 +7,9 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  addDoc,
-  getDocs
+  addDoc
 } from 'firebase/firestore';
+import categoriasFixas from '../categoriasFixas';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
@@ -21,37 +20,26 @@ function Dashboard() {
   const [categoria, setCategoria] = useState('');
   const [valor, setValor] = useState('');
   const [data, setData] = useState('');
-  const [categorias, setCategorias] = useState([]);
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
 
   useEffect(() => {
-    const unsubscribeAuth = auth.onAuthStateChanged(async (usuario) => {
-      if (!usuario) return;
+    const usuario = auth.currentUser;
+    if (!usuario) return;
 
-      const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
-      const unsubscribeTransacoes = onSnapshot(q, (snapshot) => {
-        const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setTransacoes(lista);
+    const q = query(collection(db, 'transacoes'), where('uid', '==', usuario.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setTransacoes(lista);
 
-        const entradas = lista
-          .filter((t) => t.tipo === 'entrada')
-          .reduce((acc, t) => acc + t.valor, 0);
-        const saidas = lista
-          .filter((t) => t.tipo === 'saida')
-          .reduce((acc, t) => acc + t.valor, 0);
-        setEntradaTotal(entradas);
-        setSaidaTotal(saidas);
-      });
-
-      const catQuery = query(collection(db, 'categorias'), where('uid', '==', usuario.uid));
-      const snapshot = await getDocs(catQuery);
-      const lista = snapshot.docs.map((doc) => doc.data().nome);
-      setCategorias(lista);
+      const entradas = lista.filter((t) => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+      const saidas = lista.filter((t) => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+      setEntradaTotal(entradas);
+      setSaidaTotal(saidas);
     });
 
-    return () => unsubscribeAuth();
+    return () => unsubscribe();
   }, []);
 
   const handleExcluir = async (id) => {
@@ -106,6 +94,7 @@ function Dashboard() {
   });
 
   const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
+  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
@@ -149,8 +138,8 @@ function Dashboard() {
 
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
             <option value="">Selecione a categoria</option>
-            {categorias.map((cat, i) => (
-              <option key={i} value={cat}>{cat}</option>
+            {categoriasFiltradas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
             ))}
           </select>
 
@@ -180,8 +169,8 @@ function Dashboard() {
 
             <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
               <option value="">Todas as categorias</option>
-              {categorias.map((cat, i) => (
-                <option key={i} value={cat}>{cat}</option>
+              {categoriasFixas.map((cat, i) => (
+                <option key={i} value={cat.nome}>{cat.nome}</option>
               ))}
             </select>
 
