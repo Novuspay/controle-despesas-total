@@ -66,7 +66,7 @@ function Dashboard() {
       descricao,
       categoria,
       valor: parseFloat(valor),
-      data: new Date(data),
+      data: new Date(data + 'T00:00:00'),
       uid: usuario.uid
     };
 
@@ -154,14 +154,10 @@ function Dashboard() {
             Adicionar Transação
           </button>
 
-          <div className="grid grid-cols-2 gap-4 mt-6">
+          <div className="grid grid-cols-1 gap-4 mt-6">
             <div className="bg-gray-100 rounded p-4 text-center">
               <p className="text-xs text-gray-500">Transações</p>
               <p className="text-lg font-bold">{transacoes.length}</p>
-            </div>
-            <div className="bg-gray-100 rounded p-4 text-center">
-              <p className="text-xs text-gray-500">Este Mês</p>
-              <p className="text-lg font-bold">{totalMes}</p>
             </div>
           </div>
         </div>
