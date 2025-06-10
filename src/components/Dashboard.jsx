@@ -13,8 +13,6 @@ import categoriasFixas from '../categoriasFixas';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
-  const [entradaTotal, setEntradaTotal] = useState(0);
-  const [saidaTotal, setSaidaTotal] = useState(0);
   const [tipo, setTipo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -75,32 +73,27 @@ function Dashboard() {
     }
   };
 
-  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
-
-  const transacoesFiltradas = transacoes.filter((t) => {
-    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
-    const mesTransacao = dataTransacao.getMonth() + 1;
-    const anoTransacao = dataTransacao.getFullYear();
-    const hoje = new Date();
-
-    const condTipo = !filtroTipo || t.tipo === filtroTipo;
-    const condCategoria = !filtroCategoria || t.categoria === filtroCategoria;
-    const condMes = !filtroMes || (parseInt(filtroMes) === mesTransacao && anoTransacao === hoje.getFullYear());
-
-    return condTipo && condCategoria && condMes;
-  });
-
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
   const transacoesDoMes = transacoes.filter((t) => {
-    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
-    return (
-      dataTransacao.getMonth() + 1 === mesGrafico &&
-      dataTransacao.getFullYear() === new Date().getFullYear()
-    );
+    const d = new Date(t.data?.toDate?.() || t.data);
+    return d.getMonth() + 1 === mesGrafico && d.getFullYear() === anoAtual;
   });
 
   const entradaTotal = transacoesDoMes.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
-  const saidaTotal = transacoesDoMes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
-  const saldo = entradaTotal - saidaTotal;
+  const saidaTotalCalc = transacoesDoMes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+  const saldo = entradaTotal - saidaTotalCalc;
+
+  const transacoesFiltradas = transacoesDoMes.filter((t) => {
+    const mesTransacao = new Date(t.data?.toDate?.() || t.data).getMonth() + 1;
+    const anoTransacao = new Date(t.data?.toDate?.() || t.data).getFullYear();
+    const condTipo = !filtroTipo || t.tipo === filtroTipo;
+    const condCategoria = !filtroCategoria || t.categoria === filtroCategoria;
+    const condMes = !filtroMes || parseInt(filtroMes) === mesTransacao;
+    return condTipo && condCategoria && condMes;
+  });
+
+  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
   const despesasPorCategoria = transacoesDoMes
     .filter((t) => t.tipo === 'saida')
@@ -112,8 +105,8 @@ function Dashboard() {
   const totalDespesas = Object.values(despesasPorCategoria).reduce((acc, val) => acc + val, 0);
   const cores = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#60a5fa", "#a78bfa", "#f472b6", "#34d399"];
   const radius = 70;
-  const cx = 90;
-  const cy = 90;
+  const cx = 100;
+  const cy = 100;
   let acumulado = 0;
   const segmentos = Object.entries(despesasPorCategoria).map(([cat, val], i) => {
     const proporcao = val / totalDespesas;
@@ -125,21 +118,23 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-3xl font-bold text-center text-white mb-2">💰 Controle de Gastos</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+        <span role="img" aria-label="money">💰</span> Controle de Gastos
+      </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500">🟢 Total de Entradas</p>
-          <p className="text-xl font-bold text-green-600">R$ {entradaTotal.toFixed(2)}</p>
+          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
+          <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500">🔴 Total de Saídas</p>
-          <p className="text-xl font-bold text-red-600">R$ {saidaTotal.toFixed(2)}</p>
+          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
+          <p className="text-xl text-red-600 font-bold">R$ {saidaTotalCalc.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500">🔵 Saldo Atual</p>
-          <p className="text-xl font-bold text-emerald-600">R$ {saldo.toFixed(2)}</p>
+          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
+          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
         </div>
       </div>
 
@@ -167,9 +162,9 @@ function Dashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-purple-700 mb-2">📊 Gastos por Categoria</h2>
-          <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="mb-4 border px-2 py-1 rounded">
+          <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="mb-4 border rounded px-2 py-1">
             {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>{`${i + 1}º mês`}</option>
+              <option key={i + 1} value={i + 1}>{i + 1}º mês</option>
             ))}
           </select>
           <div className="flex flex-col items-center">
@@ -186,7 +181,7 @@ function Dashboard() {
                   strokeWidth="30"
                   strokeDasharray={s.dashArray}
                   strokeDashoffset={-s.dashOffset}
-                  transform="rotate(-90 90 90)"
+                  transform="rotate(-90 100 100)"
                   onMouseEnter={() => setHoveredCategoria(s.cat)}
                   onMouseLeave={() => setHoveredCategoria(null)}
                 />
@@ -221,7 +216,7 @@ function Dashboard() {
           <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
             <option value="">Todos os meses</option>
             {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>{`${i + 1}º mês`}</option>
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
             ))}
           </select>
         </div>
