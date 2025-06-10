@@ -24,7 +24,6 @@ function Dashboard() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
   const [hoveredCategoria, setHoveredCategoria] = useState(null);
-  const [mesGrafico, setMesGrafico] = useState('atual');
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -82,23 +81,27 @@ function Dashboard() {
 
   const saldo = entradaTotal - saidaTotal;
 
-  const hoje = new Date();
-  const mesSelecionado = mesGrafico === 'atual' ? hoje.getMonth() : hoje.getMonth() - 1;
-  const anoSelecionado = hoje.getFullYear();
+  const transacoesFiltradas = transacoes.filter((t) => {
+    const mesTransacao = new Date(t.data?.toDate?.() || t.data).getMonth() + 1;
+    const anoTransacao = new Date(t.data?.toDate?.() || t.data).getFullYear();
+    const hoje = new Date();
 
-  const transacoesGrafico = transacoes.filter((t) => {
-    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
-    return (
-      t.tipo === 'saida' &&
-      dataTransacao.getMonth() === mesSelecionado &&
-      dataTransacao.getFullYear() === anoSelecionado
-    );
+    const condTipo = !filtroTipo || t.tipo === filtroTipo;
+    const condCategoria = !filtroCategoria || t.categoria === filtroCategoria;
+    const condMes =
+      !filtroMes || (parseInt(filtroMes) === mesTransacao && anoTransacao === hoje.getFullYear());
+
+    return condTipo && condCategoria && condMes;
   });
 
-  const despesasPorCategoria = transacoesGrafico.reduce((acc, t) => {
-    acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
-    return acc;
-  }, {});
+  const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
+
+  const despesasPorCategoria = transacoes
+    .filter((t) => t.tipo === 'saida')
+    .reduce((acc, t) => {
+      acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
+      return acc;
+    }, {});
 
   const totalDespesas = Object.values(despesasPorCategoria).reduce((acc, val) => acc + val, 0);
   const cores = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#60a5fa", "#a78bfa", "#f472b6", "#34d399"];
@@ -111,7 +114,7 @@ function Dashboard() {
     const dashArray = `${proporcao * 2 * Math.PI * radius} ${(1 - proporcao) * 2 * Math.PI * radius}`;
     const dashOffset = acumulado;
     acumulado += proporcao * 2 * Math.PI * radius;
-    return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length], proporcao };
+    return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length] };
   });
 
   return (
@@ -147,7 +150,7 @@ function Dashboard() {
           <input type="text" placeholder="Ex: Salário" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
             <option value="">Selecione a categoria</option>
-            {categoriasFixas.filter((cat) => cat.tipo === tipo).map((cat, i) => (
+            {categoriasFiltradas.map((cat, i) => (
               <option key={i} value={cat.nome}>{cat.nome}</option>
             ))}
           </select>
@@ -159,13 +162,7 @@ function Dashboard() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-purple-700 mb-2">📊 Gastos por Categoria</h2>
-          <button
-            onClick={() => setMesGrafico(mesGrafico === 'atual' ? 'anterior' : 'atual')}
-            className="mb-4 text-sm text-blue-600 underline hover:text-blue-800"
-          >
-            Visualizar {mesGrafico === 'atual' ? 'mês anterior' : 'mês atual'}
-          </button>
+          <h2 className="text-lg font-bold text-purple-700 mb-4">📊 Gastos por Categoria</h2>
           <div className="flex flex-col items-center">
             <svg width="160" height="160" viewBox="0 0 160 160">
               <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="30" />
@@ -190,13 +187,15 @@ function Dashboard() {
               {segmentos.map((s, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: s.cor }}></span>
-                  <span>{s.cat} – {Math.round(s.proporcao * 100)}% (R$ {s.val.toFixed(2)})</span>
+                  <span>{s.cat} - {((s.val / totalDespesas) * 100).toFixed(1)}% (R$ {s.val.toFixed(2)})</span>
+                  {hoveredCategoria === s.cat && <span className="text-xs text-gray-400"> (hover)</span>}
                 </li>
               ))}
             </ul>
           </div>
         </div>
       </div>
+
       <div className="bg-white rounded-lg shadow p-6 mt-6">
         <h2 className="text-lg font-bold text-red-600 mb-4">📄 Transações</h2>
         <div className="flex gap-2 mb-4">
