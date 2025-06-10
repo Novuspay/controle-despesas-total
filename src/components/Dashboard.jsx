@@ -94,40 +94,53 @@ function Dashboard() {
     return condTipo && condCategoria && condMes;
   });
 
+  const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
+
+  const despesasPorCategoria = transacoes
+    .filter((t) => t.tipo === 'saida')
+    .reduce((acc, t) => {
+      acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
+      return acc;
+    }, {});
+
+  const totalDespesas = Object.values(despesasPorCategoria).reduce((acc, val) => acc + val, 0);
+  const cores = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#60a5fa", "#a78bfa", "#f472b6", "#34d399"];
+  const radius = 70;
+  const cx = 80;
+  const cy = 80;
+  let acumulado = 0;
+  const segmentos = Object.entries(despesasPorCategoria).map(([cat, val], i) => {
+    const proporcao = val / totalDespesas;
+    const dashArray = `${proporcao * 2 * Math.PI * radius} ${(1 - proporcao) * 2 * Math.PI * radius}`;
+    const dashOffset = acumulado;
+    acumulado += proporcao * 2 * Math.PI * radius;
+    return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length] };
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-3xl font-bold text-center text-white mb-2">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4 text-center border-t-4 border-green-500">
-          <p className="text-sm text-gray-500 font-medium flex justify-center items-center gap-1">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11H9v2H7v2h2v2h2v-2h2v-2h-2V7z" /></svg>
-            Total de Entradas
-          </p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
           <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 text-center border-t-4 border-red-500">
-          <p className="text-sm text-gray-500 font-medium flex justify-center items-center gap-1">
-            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5h2v2h-2v-2zm0-6h2v4h-2V7z" /></svg>
-            Total de Saídas
-          </p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
           <p className="text-xl text-red-600 font-bold">R$ {saidaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4 text-center border-t-4 border-blue-500">
-          <p className="text-sm text-gray-500 font-medium flex justify-center items-center gap-1">
-            <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13h-2v2h2V5zm-2 4h2v6h-2V9z" /></svg>
-            Saldo Atual
-          </p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
           <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
         </div>
       </div>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
           <h2 className="text-lg font-bold text-indigo-600 mb-4">➕ Nova Transação</h2>
           <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
