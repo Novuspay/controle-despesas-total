@@ -187,7 +187,7 @@ function Dashboard() {
               {segmentos.map((s, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: s.cor }}></span>
-                  <span>{s.cat} - R$ {s.val.toFixed(2)}</span>
+                  <span>{s.cat} - {((s.val / totalDespesas) * 100).toFixed(1)}% (R$ {s.val.toFixed(2)})</span>
                   {hoveredCategoria === s.cat && <span className="text-xs text-gray-400"> (hover)</span>}
                 </li>
               ))}
