@@ -23,6 +23,7 @@ function Dashboard() {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
+  const [hoveredCategoria, setHoveredCategoria] = useState(null);
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -96,110 +97,153 @@ function Dashboard() {
   const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
+  const despesasPorCategoria = transacoes
+    .filter((t) => t.tipo === 'saida')
+    .reduce((acc, t) => {
+      acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
+      return acc;
+    }, {});
+
+  const totalDespesas = Object.values(despesasPorCategoria).reduce((acc, val) => acc + val, 0);
+  const cores = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#60a5fa", "#a78bfa", "#f472b6", "#34d399"];
+  const radius = 70;
+  const cx = 80;
+  const cy = 80;
+  let acumulado = 0;
+  const segmentos = Object.entries(despesasPorCategoria).map(([cat, val], i) => {
+    const proporcao = val / totalDespesas;
+    const dashArray = `${proporcao * 2 * Math.PI * radius} ${(1 - proporcao) * 2 * Math.PI * radius}`;
+    const dashOffset = acumulado;
+    acumulado += proporcao * 2 * Math.PI * radius;
+    return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length] };
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-white p-4 sm:p-6">
-      <header className="text-center mb-6">
-        <h1 className="text-3xl font-bold">💰 Controle de Gastos</h1>
-        <p className="text-sm text-slate-300">Gerencie sua vida financeira de forma prática</p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+        <span role="img" aria-label="money">💰</span> Controle de Gastos
+      </h1>
+      <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
 
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white bg-opacity-10 p-4 rounded-xl shadow text-center">
-          <p className="text-sm text-green-300">🟢 Entradas</p>
-          <p className="text-2xl font-bold text-green-400">R$ {entradaTotal.toFixed(2)}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
+          <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white bg-opacity-10 p-4 rounded-xl shadow text-center">
-          <p className="text-sm text-red-300">🔴 Saídas</p>
-          <p className="text-2xl font-bold text-red-400">R$ {saidaTotal.toFixed(2)}</p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
+          <p className="text-xl text-red-600 font-bold">R$ {saidaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white bg-opacity-10 p-4 rounded-xl shadow text-center">
-          <p className="text-sm text-blue-300">🔵 Saldo</p>
-          <p className="text-2xl font-bold text-emerald-300">R$ {saldo.toFixed(2)}</p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
+          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
         </div>
-      </section>
+      </div>
 
-      <section className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white bg-opacity-10 p-6 rounded-xl">
-          <h2 className="text-xl font-semibold text-indigo-300 mb-4">➕ Nova Transação</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
+          <h2 className="text-lg font-bold text-indigo-600 mb-4">➕ Nova Transação</h2>
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione o tipo</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <input type="text" placeholder="Ex: Salário" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione a categoria</option>
+            {categoriasFiltradas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full mb-4 border rounded px-3 py-2" />
+          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">
+            Adicionar Transação
+          </button>
+        </div>
 
-          <div className="space-y-2">
-            <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full p-2 rounded bg-slate-100 text-black">
-              <option value="">Tipo</option>
-              <option value="entrada">Entrada</option>
-              <option value="saida">Saída</option>
-            </select>
-
-            <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full p-2 rounded bg-slate-100 text-black" />
-
-            <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full p-2 rounded bg-slate-100 text-black">
-              <option value="">Categoria</option>
-              {categoriasFiltradas.map((cat, i) => (
-                <option key={i} value={cat.nome}>{cat.nome}</option>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-purple-700 mb-4">📊 Gastos por Categoria</h2>
+          <div className="flex flex-col items-center">
+            <svg width="160" height="160" viewBox="0 0 160 160">
+              <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="30" />
+              {segmentos.map((s, i) => (
+                <circle
+                  key={i}
+                  cx={cx}
+                  cy={cy}
+                  r={radius}
+                  fill="none"
+                  stroke={s.cor}
+                  strokeWidth="30"
+                  strokeDasharray={s.dashArray}
+                  strokeDashoffset={-s.dashOffset}
+                  transform="rotate(-90 80 80)"
+                  onMouseEnter={() => setHoveredCategoria(s.cat)}
+                  onMouseLeave={() => setHoveredCategoria(null)}
+                />
               ))}
-            </select>
-
-            <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full p-2 rounded bg-slate-100 text-black" />
-
-            <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full p-2 rounded bg-slate-100 text-black" />
-
-            <button onClick={handleAdicionar} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-semibold">
-              Adicionar
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white bg-opacity-10 p-6 rounded-xl">
-          <h2 className="text-xl font-semibold text-red-300 mb-4">📄 Histórico</h2>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="p-1 rounded text-black">
-              <option value="">Tipo</option>
-              <option value="entrada">Entrada</option>
-              <option value="saida">Saída</option>
-            </select>
-
-            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="p-1 rounded text-black">
-              <option value="">Categoria</option>
-              {categoriasFixas.map((cat, i) => (
-                <option key={i} value={cat.nome}>{cat.nome}</option>
-              ))}
-            </select>
-
-            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="p-1 rounded text-black">
-              <option value="">Mês</option>
-              {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1}</option>
-              ))}
-            </select>
-          </div>
-
-          {transacoesFiltradas.length === 0 ? (
-            <p className="text-slate-300 text-sm">Nenhuma transação encontrada.</p>
-          ) : (
-            <ul className="space-y-2">
-              {transacoesFiltradas.map((t) => (
-                <li key={t.id} className="flex justify-between bg-white bg-opacity-10 rounded p-2">
-                  <div>
-                    <p className="font-semibold">{t.descricao || '(Sem descrição)'}</p>
-                    <p className="text-sm text-slate-300">
-                      {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')} - {t.categoria}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className={t.tipo === 'entrada' ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
-                      {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
-                    </p>
-                    <button
-                      onClick={() => handleExcluir(t.id)}
-                      className="text-red-300 text-xs hover:underline"
-                    >Excluir</button>
-                  </div>
+            </svg>
+            <ul className="mt-4 space-y-1 text-sm">
+              {segmentos.map((s, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: s.cor }}></span>
+                  <span>{s.cat} - R$ {s.val.toFixed(2)}</span>
+                  {hoveredCategoria === s.cat && <span className="text-xs text-gray-400"> (hover)</span>}
                 </li>
               ))}
             </ul>
-          )}
+          </div>
         </div>
-      </section>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <h2 className="text-lg font-bold text-red-600 mb-4">📄 Transações</h2>
+        <div className="flex gap-2 mb-4">
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os tipos</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todas as categorias</option>
+            {categoriasFixas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+          <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os meses</option>
+            {[...Array(12)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+        </div>
+        {transacoesFiltradas.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+        ) : (
+          <ul className="divide-y text-sm">
+            {transacoesFiltradas.map((t) => (
+              <li key={t.id} className="py-3 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
+                  <p className="text-gray-500">
+                    {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
+                    {t.categoria && ` - ${t.categoria}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                    {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
+                  </p>
+                  <button onClick={() => handleExcluir(t.id)} className="text-red-500 hover:underline text-xs mt-1">
+                    Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
