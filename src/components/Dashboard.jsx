@@ -94,7 +94,6 @@ function Dashboard() {
     return condTipo && condCategoria && condMes;
   });
 
-  const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
   const despesasPorCategoria = transacoes
