@@ -16,6 +16,7 @@ const categoriasFixas = [
   { nome: 'Educação', tipo: 'saida' },
   { nome: 'Lazer', tipo: 'saida' },
   { nome: 'Roupa', tipo: 'saida' },
+  { nome: 'Familia', tipo: 'saida' },
   { nome: 'Pet', tipo: 'saida' },
   { nome: 'Delivery', tipo: 'saida' },
   { nome: 'Contas diversas', tipo: 'saida' },
