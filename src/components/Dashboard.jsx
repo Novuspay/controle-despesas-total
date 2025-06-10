@@ -96,52 +96,122 @@ function Dashboard() {
   const totalMes = transacoesFiltradas.reduce((acc, t) => acc + t.valor, 0);
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
-  const entradasPorMes = Array(12).fill(0);
-  transacoes.forEach((t) => {
-    const d = new Date(t.data?.toDate?.() || t.data);
-    const mes = d.getMonth();
-    if (t.tipo === 'entrada') entradasPorMes[mes] += t.valor;
-  });
-
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-white p-6">
-      <h1 className="text-3xl font-bold text-center mb-2">💰 Controle de Gastos</h1>
-      <p className="text-center text-sm mb-6">Controle cada real que entra e sai</p>
+    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+        <span role="img" aria-label="money">💰</span> Controle de Gastos
+      </h1>
+      <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white text-black rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
-          <p className="text-xl font-bold text-green-600">R$ {entradaTotal.toFixed(2)}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-green-500">🟢</span> Total de Entradas
+          </p>
+          <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white text-black rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
-          <p className="text-xl font-bold text-red-600">R$ {saidaTotal.toFixed(2)}</p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-red-500">🔴</span> Total de Saídas
+          </p>
+          <p className="text-xl text-red-600 font-bold">R$ {saidaTotal.toFixed(2)}</p>
         </div>
-        <div className="bg-white text-black rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
-          <p className="text-xl font-bold text-emerald-600">R$ {saldo.toFixed(2)}</p>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium flex items-center justify-center gap-1">
+            <span className="text-blue-500">🔵</span> Saldo Atual
+          </p>
+          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-bold text-indigo-600 mb-4">📊 Gráfico Entradas Mês a Mês</h2>
-        <svg width="100%" height="200">
-          {entradasPorMes.map((valor, i) => {
-            const altura = valor * 0.5;
-            return (
-              <g key={i} transform={`translate(${i * 30 + 20}, 180)`}>
-                <rect width="20" height={-altura} fill="#6366f1" />
-                <text x="10" y="15" fontSize="10" fill="#000" textAnchor="middle">{valor > 0 ? valor : ''}</text>
-                <text x="10" y="30" fontSize="10" fill="#000" textAnchor="middle">
-                  {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][i]}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-indigo-600 mb-4 flex items-center gap-2">➕ Nova Transação</h2>
 
-      {/* O restante do layout permanece igual (Nova Transação e Transações) */}
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione o tipo</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+
+          <input type="text" placeholder="Ex: Salário, Alimentação, etc." value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione a categoria</option>
+            {categoriasFiltradas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+
+          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full mb-4 border rounded px-3 py-2" />
+
+          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">
+            Adicionar Transação
+          </button>
+
+          <div className="bg-gray-100 rounded p-4 text-center mt-6">
+            <p className="text-xs text-gray-500">Transações</p>
+            <p className="text-lg font-bold">{transacoesFiltradas.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">📄 Transações</h2>
+
+          <div className="flex gap-2 mb-4">
+            <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todos os tipos</option>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+            </select>
+
+            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todas as categorias</option>
+              {categoriasFixas.map((cat, i) => (
+                <option key={i} value={cat.nome}>{cat.nome}</option>
+              ))}
+            </select>
+
+            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
+              <option value="">Todos os meses</option>
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>{i + 1}</option>
+              ))}
+            </select>
+          </div>
+
+          {transacoesFiltradas.length === 0 ? (
+            <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {transacoesFiltradas.map((t) => (
+                <li key={t.id} className="py-3 flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
+                    <p className="text-gray-500">
+                      {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
+                      {t.categoria && ` - ${t.categoria}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                      {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => handleExcluir(t.id)}
+                      className="text-red-500 hover:underline text-xs mt-1"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
