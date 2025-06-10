@@ -23,8 +23,8 @@ function Dashboard() {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
+  const [mesGrafico, setMesGrafico] = useState(new Date().getMonth() + 1);
   const [hoveredCategoria, setHoveredCategoria] = useState(null);
-  const [mesSelecionadoGrafico, setMesSelecionadoGrafico] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -75,24 +75,13 @@ function Dashboard() {
     }
   };
 
-  const hoje = new Date();
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
-  const transacoesDoMes = transacoes.filter((t) => {
-    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
-    return (
-      dataTransacao.getMonth() + 1 === mesSelecionadoGrafico &&
-      dataTransacao.getFullYear() === hoje.getFullYear()
-    );
-  });
-
-  const entradaTotalMes = transacoesDoMes.filter((t) => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
-  const saidaTotalMes = transacoesDoMes.filter((t) => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
-  const saldo = entradaTotalMes - saidaTotalMes;
-
   const transacoesFiltradas = transacoes.filter((t) => {
-    const mesTransacao = new Date(t.data?.toDate?.() || t.data).getMonth() + 1;
-    const anoTransacao = new Date(t.data?.toDate?.() || t.data).getFullYear();
+    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
+    const mesTransacao = dataTransacao.getMonth() + 1;
+    const anoTransacao = dataTransacao.getFullYear();
+    const hoje = new Date();
 
     const condTipo = !filtroTipo || t.tipo === filtroTipo;
     const condCategoria = !filtroCategoria || t.categoria === filtroCategoria;
@@ -101,16 +90,30 @@ function Dashboard() {
     return condTipo && condCategoria && condMes;
   });
 
-  const despesasPorCategoria = transacoesDoMes.filter((t) => t.tipo === 'saida').reduce((acc, t) => {
-    acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
-    return acc;
-  }, {});
+  const transacoesDoMes = transacoes.filter((t) => {
+    const dataTransacao = new Date(t.data?.toDate?.() || t.data);
+    return (
+      dataTransacao.getMonth() + 1 === mesGrafico &&
+      dataTransacao.getFullYear() === new Date().getFullYear()
+    );
+  });
+
+  const entradaTotal = transacoesDoMes.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+  const saidaTotal = transacoesDoMes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+  const saldo = entradaTotal - saidaTotal;
+
+  const despesasPorCategoria = transacoesDoMes
+    .filter((t) => t.tipo === 'saida')
+    .reduce((acc, t) => {
+      acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
+      return acc;
+    }, {});
 
   const totalDespesas = Object.values(despesasPorCategoria).reduce((acc, val) => acc + val, 0);
   const cores = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#60a5fa", "#a78bfa", "#f472b6", "#34d399"];
-  const radius = 50;
-  const cx = 60;
-  const cy = 60;
+  const radius = 70;
+  const cx = 90;
+  const cy = 90;
   let acumulado = 0;
   const segmentos = Object.entries(despesasPorCategoria).map(([cat, val], i) => {
     const proporcao = val / totalDespesas;
@@ -122,23 +125,21 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
-        <span role="img" aria-label="money">💰</span> Controle de Gastos
-      </h1>
+      <h1 className="text-3xl font-bold text-center text-white mb-2">💰 Controle de Gastos</h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
-          <p className="text-xl text-green-600 font-bold">R$ {entradaTotalMes.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">🟢 Total de Entradas</p>
+          <p className="text-xl font-bold text-green-600">R$ {entradaTotal.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
-          <p className="text-xl text-red-600 font-bold">R$ {saidaTotalMes.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">🔴 Total de Saídas</p>
+          <p className="text-xl font-bold text-red-600">R$ {saidaTotal.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
-          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">🔵 Saldo Atual</p>
+          <p className="text-xl font-bold text-emerald-600">R$ {saldo.toFixed(2)}</p>
         </div>
       </div>
 
@@ -166,17 +167,13 @@ function Dashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-purple-700 mb-2">📊 Gastos por Categoria</h2>
-          <select
-            value={mesSelecionadoGrafico}
-            onChange={(e) => setMesSelecionadoGrafico(parseInt(e.target.value))}
-            className="mb-4 border rounded px-2 py-1"
-          >
+          <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="mb-4 border px-2 py-1 rounded">
             {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1}º mês</option>
+              <option key={i + 1} value={i + 1}>{`${i + 1}º mês`}</option>
             ))}
           </select>
           <div className="flex flex-col items-center">
-            <svg width="160" height="160" viewBox="0 0 160 160">
+            <svg width="200" height="200" viewBox="0 0 200 200">
               <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="30" />
               {segmentos.map((s, i) => (
                 <circle
@@ -189,7 +186,7 @@ function Dashboard() {
                   strokeWidth="30"
                   strokeDasharray={s.dashArray}
                   strokeDashoffset={-s.dashOffset}
-                  transform="rotate(-90 80 80)"
+                  transform="rotate(-90 90 90)"
                   onMouseEnter={() => setHoveredCategoria(s.cat)}
                   onMouseLeave={() => setHoveredCategoria(null)}
                 />
@@ -199,12 +196,60 @@ function Dashboard() {
               {segmentos.map((s, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: s.cor }}></span>
-                  <span>{s.cat} – {(s.proporcao * 100).toFixed(1)}% (R$ {s.val.toFixed(2)})</span>
+                  <span>{s.cat} - {(s.proporcao * 100).toFixed(1)}% (R$ {s.val.toFixed(2)})</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <h2 className="text-lg font-bold text-red-600 mb-4">📄 Transações</h2>
+        <div className="flex gap-2 mb-4">
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os tipos</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todas as categorias</option>
+            {categoriasFixas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+          <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os meses</option>
+            {[...Array(12)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>{`${i + 1}º mês`}</option>
+            ))}
+          </select>
+        </div>
+        {transacoesFiltradas.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+        ) : (
+          <ul className="divide-y text-sm">
+            {transacoesFiltradas.map((t) => (
+              <li key={t.id} className="py-3 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
+                  <p className="text-gray-500">
+                    {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
+                    {t.categoria && ` - ${t.categoria}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                    {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
+                  </p>
+                  <button onClick={() => handleExcluir(t.id)} className="text-red-500 hover:underline text-xs mt-1">
+                    Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
