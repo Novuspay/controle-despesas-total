@@ -10,6 +10,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 import categoriasFixas from '../categoriasFixas';
+import GerenciarCategorias from './components/GerenciarCategorias';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
@@ -120,8 +121,9 @@ function Dashboard() {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6"> 
-<h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
+      <GerenciarCategorias />
+  <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
