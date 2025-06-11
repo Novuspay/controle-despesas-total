@@ -10,7 +10,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 import categoriasFixas from '../categoriasFixas';
-import GerenciarCategorias from './components/GerenciarCategorias';
+import GerenciarCategorias from './GerenciarCategorias';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
