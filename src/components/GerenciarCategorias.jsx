@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { db, auth } from '../firebase';
+import React, { useEffect, useState } from 'react';
+import { auth, db } from '../firebase';
 import {
   collection,
-  addDoc,
-  deleteDoc,
-  doc,
   query,
   where,
-  onSnapshot
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc
 } from 'firebase/firestore';
 
 function GerenciarCategorias() {
   const [categorias, setCategorias] = useState([]);
   const [novaCategoria, setNovaCategoria] = useState('');
-  const [tipoCategoria, setTipoCategoria] = useState('entrada');
+  const [tipo, setTipo] = useState('entrada');
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -28,14 +28,17 @@ function GerenciarCategorias() {
     return () => unsubscribe();
   }, []);
 
-  const adicionarCategoria = async () => {
+  const handleAdicionar = async () => {
     const usuario = auth.currentUser;
-    if (!usuario || !novaCategoria || !tipoCategoria) return;
+    if (!usuario || !novaCategoria || !tipo) {
+      alert('Preencha todos os campos.');
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'categorias'), {
         nome: novaCategoria,
-        tipo: tipoCategoria,
+        tipo,
         uid: usuario.uid
       });
       setNovaCategoria('');
@@ -44,7 +47,7 @@ function GerenciarCategorias() {
     }
   };
 
-  const excluirCategoria = async (id) => {
+  const handleExcluir = async (id) => {
     try {
       await deleteDoc(doc(db, 'categorias', id));
     } catch (error) {
@@ -53,28 +56,28 @@ function GerenciarCategorias() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-bold text-indigo-700 mb-4">🎯 Gerenciar Categorias</h2>
+    <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <h2 className="text-lg font-bold text-indigo-600 mb-2">⚙️ Gerenciar Categorias</h2>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Nova categoria"
+          value={novaCategoria}
+          onChange={(e) => setNovaCategoria(e.target.value)}
+          className="border rounded px-3 py-2 flex-1"
+        />
         <select
-          value={tipoCategoria}
-          onChange={(e) => setTipoCategoria(e.target.value)}
-          className="border rounded px-3 py-1"
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          className="border rounded px-3 py-2"
         >
           <option value="entrada">Entrada</option>
           <option value="saida">Saída</option>
         </select>
-        <input
-          type="text"
-          placeholder="Nome da categoria"
-          value={novaCategoria}
-          onChange={(e) => setNovaCategoria(e.target.value)}
-          className="border rounded px-3 py-1 w-full"
-        />
         <button
-          onClick={adicionarCategoria}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded"
+          onClick={handleAdicionar}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >
           Adicionar
         </button>
@@ -83,9 +86,11 @@ function GerenciarCategorias() {
       <ul className="text-sm divide-y">
         {categorias.map((cat) => (
           <li key={cat.id} className="py-2 flex justify-between items-center">
-            <span>{cat.nome} <span className="text-gray-400 text-xs">({cat.tipo})</span></span>
+            <span>
+              {cat.nome} — <span className="text-gray-500 italic">{cat.tipo}</span>
+            </span>
             <button
-              onClick={() => excluirCategoria(cat.id)}
+              onClick={() => handleExcluir(cat.id)}
               className="text-red-500 hover:underline text-xs"
             >
               Excluir
