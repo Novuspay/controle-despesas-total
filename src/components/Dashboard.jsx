@@ -224,7 +224,9 @@ function Dashboard() {
           <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
         ) : (
           <ul className="divide-y text-sm">
-            {transacoesFiltradas.map((t) => (
+             {[...transacoesFiltradas]
+              .sort((a, b) => new Date(b.data?.toDate?.() || b.data) - new Date(a.data?.toDate?.() || a.data))
+              .map((t) => (
               <li key={t.id} className="py-3 flex justify-between items-center">
                 <div>
                   <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
