@@ -235,7 +235,7 @@ function Dashboard() {
                   <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
                   <p className="text-gray-500">
                     {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
-                    {t.categoria &&  - ${t.categoria'}
+                    {t.categoria && ' - ${t.categoria'}
                   </p>
                 </div>
                 <div className="text-right">
