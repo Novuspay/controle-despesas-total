@@ -108,20 +108,17 @@ function Dashboard() {
   const cx = 100;
   const cy = 100;
   let acumulado = 0;
-
-  const segmentos = Object.entries(despesasPorCategoria)
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat, val], i) => {
-      const proporcao = val / totalDespesas;
-      const dashArray = `${proporcao * 2 * Math.PI * radius} ${(1 - proporcao) * 2 * Math.PI * radius}`;
-      const dashOffset = acumulado;
-      acumulado += proporcao * 2 * Math.PI * radius;
-      return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length], proporcao };
-    });
+  const segmentos = Object.entries(despesasPorCategoria).map(([cat, val], i) => {
+    const proporcao = val / totalDespesas;
+    const dashArray = ${proporcao * 2 * Math.PI * radius} ${(1 - proporcao) * 2 * Math.PI * radius};
+    const dashOffset = acumulado;
+    acumulado += proporcao * 2 * Math.PI * radius;
+    return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length], proporcao };
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6"> 
-<h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
+    <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
@@ -235,7 +232,7 @@ function Dashboard() {
                   <p className="font-medium">{t.descricao || '(Sem descrição)'}</p>
                   <p className="text-gray-500">
                     {new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR')}
-                    {t.categoria && ` - ${t.categoria}`}
+                    {t.categoria &&  - ${t.categoria}}
                   </p>
                 </div>
                 <div className="text-right">
