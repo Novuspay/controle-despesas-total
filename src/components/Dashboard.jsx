@@ -10,6 +10,8 @@ import {
   addDoc
 } from 'firebase/firestore';
 import categoriasFixas from '../categoriasFixas';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
@@ -75,13 +77,13 @@ function Dashboard() {
     }
   };
 
-  const transacoesGrafico = transacoes.filter((t) => {
+  const transacoesDoGrafico = transacoes.filter((t) => {
     const d = new Date(t.data?.toDate?.() || t.data);
     return d.getMonth() + 1 === mesGrafico && d.getFullYear() === anoGrafico;
   });
 
-  const entradaTotal = transacoesGrafico.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
-  const saidaTotalCalc = transacoesGrafico.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+  const entradaTotal = transacoesDoGrafico.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+  const saidaTotalCalc = transacoesDoGrafico.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
   const saldo = entradaTotal - saidaTotalCalc;
 
   const transacoesFiltradas = transacoes.filter((t) => {
@@ -97,7 +99,7 @@ function Dashboard() {
 
   const categoriasFiltradas = categoriasFixas.filter((cat) => cat.tipo === tipo);
 
-  const despesasPorCategoria = transacoesGrafico
+  const despesasPorCategoria = transacoesDoGrafico
     .filter((t) => t.tipo === 'saida')
     .reduce((acc, t) => {
       acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
@@ -121,7 +123,29 @@ function Dashboard() {
       return { cat, val, dashArray, dashOffset, cor: cores[i % cores.length], proporcao };
     });
 
-  const anosDisponiveis = [...new Set(transacoes.map(t => new Date(t.data?.toDate?.() || t.data).getFullYear()))];
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Relatório de Transações', 14, 20);
+
+    const colunas = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor'];
+    const linhas = transacoesFiltradas.map((t) => [
+      new Date(t.data?.toDate?.() || t.data).toLocaleDateString('pt-BR'),
+      t.tipo,
+      t.categoria,
+      t.descricao,
+      `R$ ${t.valor.toFixed(2)}`
+    ]);
+
+    linhas.push(['', '', '', 'Total Entrada:', `R$ ${entradaTotal.toFixed(2)}`]);
+    linhas.push(['', '', '', 'Total Saída:', `R$ ${saidaTotalCalc.toFixed(2)}`]);
+    linhas.push(['', '', '', 'Saldo:', `R$ ${saldo.toFixed(2)}`]);
+
+    doc.autoTable({ head: [colunas], body: linhas, startY: 30 });
+    doc.save('relatorio-transacoes.pdf');
+  };
+
+  const anosDisponiveis = Array.from(new Set(transacoes.map((t) => new Date(t.data?.toDate?.() || t.data).getFullYear())));
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
@@ -169,18 +193,16 @@ function Dashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-purple-700 mb-2">📊 Gastos por Categoria</h2>
-          <div className="flex gap-2 mb-4">
-            <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="border rounded px-2 py-1">
-              {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1}º mês</option>
-              ))}
-            </select>
-            <select value={anoGrafico} onChange={(e) => setAnoGrafico(parseInt(e.target.value))} className="border rounded px-2 py-1">
-              {anosDisponiveis.map((ano) => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
+          <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="mb-2 border rounded px-2 py-1">
+            {[...Array(12)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}º mês</option>
+            ))}
+          </select>
+          <select value={anoGrafico} onChange={(e) => setAnoGrafico(parseInt(e.target.value))} className="mb-4 border rounded px-2 py-1">
+            {anosDisponiveis.map((ano, i) => (
+              <option key={i} value={ano}>{ano}</option>
+            ))}
+          </select>
           <div className="flex flex-col items-center">
             <svg width="200" height="200" viewBox="0 0 200 200">
               <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="30" />
@@ -235,10 +257,13 @@ function Dashboard() {
           </select>
           <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)} className="border rounded px-2 py-1">
             <option value="">Todos os anos</option>
-            {anosDisponiveis.map((ano) => (
-              <option key={ano} value={ano}>{ano}</option>
+            {anosDisponiveis.map((ano, i) => (
+              <option key={i} value={ano}>{ano}</option>
             ))}
           </select>
+          <button onClick={exportarPDF} className="ml-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+            📄 Exportar PDF
+          </button>
         </div>
         {transacoesFiltradas.length === 0 ? (
           <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
