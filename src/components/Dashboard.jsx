@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { auth, db } from '../firebase';
 import {
   collection,
@@ -10,6 +10,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 import categoriasFixas from '../categoriasFixas';
+import html2pdf from 'html2pdf.js';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
@@ -25,6 +26,7 @@ function Dashboard() {
   const [mesGrafico, setMesGrafico] = useState(new Date().getMonth() + 1);
   const [anoGrafico, setAnoGrafico] = useState(new Date().getFullYear());
   const [hoveredCategoria, setHoveredCategoria] = useState(null);
+  const pdfRef = useRef();
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -123,14 +125,27 @@ function Dashboard() {
 
   const anosDisponiveis = [...new Set(transacoes.map(t => new Date(t.data?.toDate?.() || t.data).getFullYear()))];
 
+  const exportarPDF = () => {
+    const elemento = pdfRef.current;
+    html2pdf()
+      .set({ margin: 0.5, filename: 'transacoes.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } })
+      .from(elemento)
+      .save();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="text-center mb-6">
+        <button onClick={exportarPDF} className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded">
+          Exportar PDF
+        </button>
+      </div>
+      <div ref={pdfRef}>
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
           <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
