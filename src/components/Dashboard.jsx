@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import {
   collection,
@@ -10,7 +10,6 @@ import {
   addDoc
 } from 'firebase/firestore';
 import categoriasFixas from '../categoriasFixas';
-import html2pdf from 'html2pdf.js';
 
 function Dashboard() {
   const [transacoes, setTransacoes] = useState([]);
@@ -26,7 +25,6 @@ function Dashboard() {
   const [mesGrafico, setMesGrafico] = useState(new Date().getMonth() + 1);
   const [anoGrafico, setAnoGrafico] = useState(new Date().getFullYear());
   const [hoveredCategoria, setHoveredCategoria] = useState(null);
-  const pdfRef = useRef();
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -125,42 +123,126 @@ function Dashboard() {
 
   const anosDisponiveis = [...new Set(transacoes.map(t => new Date(t.data?.toDate?.() || t.data).getFullYear()))];
 
-  const exportarPDF = () => {
-    const elemento = pdfRef.current;
-    html2pdf()
-      .set({ margin: 0.5, filename: 'transacoes.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } })
-      .from(elemento)
-      .save();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-tr from-slate-800 via-indigo-900 to-slate-700 text-gray-800 p-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
-      <div className="text-center mb-6">
-        <button onClick={exportarPDF} className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded">
-          Exportar PDF
-        </button>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
+          <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
+          <p className="text-xl text-red-600 font-bold">R$ {saidaTotalCalc.toFixed(2)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
+          <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
+        </div>
       </div>
-      <div ref={pdfRef} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
-            <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
+          <h2 className="text-lg font-bold text-indigo-600 mb-4">➕ Nova Transação</h2>
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione o tipo</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <input type="text" placeholder="Ex: Salário" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full mb-2 border rounded px-3 py-2">
+            <option value="">Selecione a categoria</option>
+            {categoriasFiltradas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+          <input type="number" placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full mb-2 border rounded px-3 py-2" />
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full mb-4 border rounded px-3 py-2" />
+          <button onClick={handleAdicionar} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded font-semibold">
+            Adicionar Transação
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-purple-700 mb-2">📊 Gastos por Categoria</h2>
+          <div className="flex gap-2 mb-4">
+            <select value={mesGrafico} onChange={(e) => setMesGrafico(parseInt(e.target.value))} className="border rounded px-2 py-1">
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>{i + 1}º mês</option>
+              ))}
+            </select>
+            <select value={anoGrafico} onChange={(e) => setAnoGrafico(parseInt(e.target.value))} className="border rounded px-2 py-1">
+              {anosDisponiveis.map((ano) => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <p className="text-sm text-gray-500 font-medium">🔴 Total de Saídas</p>
-            <p className="text-xl text-red-600 font-bold">R$ {saidaTotalCalc.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <p className="text-sm text-gray-500 font-medium">🔵 Saldo Atual</p>
-            <p className="text-xl text-emerald-600 font-bold">R$ {saldo.toFixed(2)}</p>
+          <div className="flex flex-col items-center">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="30" />
+              {segmentos.map((s, i) => (
+                <circle
+                  key={i}
+                  cx={cx}
+                  cy={cy}
+                  r={radius}
+                  fill="none"
+                  stroke={s.cor}
+                  strokeWidth="30"
+                  strokeDasharray={s.dashArray}
+                  strokeDashoffset={-s.dashOffset}
+                  transform="rotate(-90 100 100)"
+                  onMouseEnter={() => setHoveredCategoria(s.cat)}
+                  onMouseLeave={() => setHoveredCategoria(null)}
+                />
+              ))}
+            </svg>
+            <ul className="mt-4 space-y-1 text-sm">
+              {segmentos.map((s, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: s.cor }}></span>
+                  <span>{s.cat} - {(s.proporcao * 100).toFixed(1)}% (R$ {s.val.toFixed(2)})</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-purple-700 mb-4">📄 Transações</h2>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <h2 className="text-lg font-bold text-red-600 mb-4">📄 Transações</h2>
+        <div className="flex gap-2 mb-4">
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os tipos</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todas as categorias</option>
+            {categoriasFixas.map((cat, i) => (
+              <option key={i} value={cat.nome}>{cat.nome}</option>
+            ))}
+          </select>
+          <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os meses</option>
+            {[...Array(12)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+          <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)} className="border rounded px-2 py-1">
+            <option value="">Todos os anos</option>
+            {anosDisponiveis.map((ano) => (
+              <option key={ano} value={ano}>{ano}</option>
+            ))}
+          </select>
+        </div>
+        {transacoesFiltradas.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nenhuma transação encontrada.</p>
+        ) : (
           <ul className="divide-y text-sm">
             {[...transacoesFiltradas]
               .sort((a, b) => new Date(b.data?.toDate?.() || b.data) - new Date(a.data?.toDate?.() || a.data))
@@ -177,11 +259,14 @@ function Dashboard() {
                     <p className={t.tipo === 'entrada' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
                       {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
                     </p>
+                    <button onClick={() => handleExcluir(t.id)} className="text-red-500 hover:underline text-xs mt-1">
+                      Excluir
+                    </button>
                   </div>
                 </li>
               ))}
           </ul>
-        </div>
+        )}
       </div>
     </div>
   );
