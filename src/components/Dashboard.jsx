@@ -145,7 +145,7 @@ function Dashboard() {
       <div className="text-center mb-4">
         <button
           onClick={handleSair}
-          className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded"
+          className="text-white font-bold px-4 py-2 rounded"
         >
           🚪 Sair
         </button>
