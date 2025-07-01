@@ -9,6 +9,8 @@ import {
   doc,
   addDoc
 } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import categoriasFixas from '../categoriasFixas';
 
 function Dashboard() {
@@ -25,6 +27,17 @@ function Dashboard() {
   const [mesGrafico, setMesGrafico] = useState(new Date().getMonth() + 1);
   const [anoGrafico, setAnoGrafico] = useState(new Date().getFullYear());
   const [hoveredCategoria, setHoveredCategoria] = useState(null);
+
+  const navigate = useNavigate();
+
+  const handleSair = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+    }
+  };
 
   useEffect(() => {
     const usuario = auth.currentUser;
@@ -129,8 +142,15 @@ function Dashboard() {
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="text-center mb-4">
+        <button
+          onClick={handleSair}
+          className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded"
+        >
+          🚪 Sair
+        </button>
+      </div>
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <p className="text-sm text-gray-500 font-medium">🟢 Total de Entradas</p>
           <p className="text-xl text-green-600 font-bold">R$ {entradaTotal.toFixed(2)}</p>
