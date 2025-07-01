@@ -142,10 +142,10 @@ function Dashboard() {
         <span role="img" aria-label="money">💰</span> Controle de Gastos
       </h1>
       <p className="text-center text-sm text-white mb-6">Controle cada real que entra e sai</p>
-      <div className="text-center mb-4">
+      <div className="text-right side mb-4">
         <button
           onClick={handleSair}
-          className="text-white font-bold px-4 py-2 rounded"
+          className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded"
         >
           🚪 Sair
         </button>
