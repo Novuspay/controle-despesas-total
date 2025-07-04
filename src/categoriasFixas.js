@@ -13,6 +13,7 @@ const categoriasFixas = [
   { nome: 'Transporte', tipo: 'saida' },
   { nome: 'Moradia', tipo: 'saida' },
   { nome: 'Saúde', tipo: 'saida' },
+  { nome: 'Mercado', tipo: 'saida' },
   { nome: 'Educação', tipo: 'saida' },
   { nome: 'Lazer', tipo: 'saida' },
   { nome: 'Roupa', tipo: 'saida' },
