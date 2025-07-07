@@ -3,7 +3,8 @@ const categoriasFixas = [
   // ENTRADAS
   { nome: 'Salários', tipo: 'entrada' },
   { nome: 'Freelance', tipo: 'entrada' },
-  { nome: 'Aportes', tipo: 'entrada' },
+  { nome: 'Pro-labore', tipo: 'entrada' },
+  { nome: 'Retirada Lucros', tipo: 'entrada' },
   { nome: 'Vendas', tipo: 'entrada' },
   { nome: 'Presentes', tipo: 'entrada' },
   { nome: 'Outros', tipo: 'entrada' },
